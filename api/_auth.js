@@ -1,5 +1,17 @@
 /* Autentifikatsiya: parol hash (scrypt), sessiya cookie, guard'lar, rate limit.
-   Yangi paket yo'q — faqat node:crypto. */
+   Yangi paket yo'q — faqat node:crypto.
+
+   IKKI MUSTAQIL SESSIYA
+   ---------------------
+   Xodim va admin bir vaqtda, bir brauzerda, bir-birini bosmasdan turadi:
+
+     mg_sess   → xodim sessiyasi  (/ sahifasi)
+     mg_admin  → admin sessiyasi  (/admin sahifasi)
+
+   Ikkalasi ham Path=/ bo'lishi SHART — chunki /api/* ga ikkala sahifadan ham
+   so'rov ketadi. Ajratish cookie NOMI bilan qilinadi, yo'l bilan emas.
+   Sessiya qatorida `tur` ustuni bor: bir turdagi token boshqa slotga
+   ko'chirilsa ham ishlamaydi. */
 import { randomBytes, scrypt as _scrypt, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { q, json } from './_db.js';
@@ -48,9 +60,17 @@ export function tokenHash(token) {
   return createHash('sha256').update(String(token)).digest('hex');
 }
 
-/* ---------- Cookie ---------- */
-const COOKIE = 'mg_sess';
+/* ---------- Sessiya turlari va cookie nomlari ---------- */
+export const TURLAR = ['xodim', 'admin'];
+const COOKIE = { xodim: 'mg_sess', admin: 'mg_admin' };
 const MUDDAT = 2592000;              // 30 kun, sekundda
+
+function turNormal(tur) {
+  return tur === 'admin' ? 'admin' : 'xodim';
+}
+function cookieNomi(tur) {
+  return COOKIE[turNormal(tur)];
+}
 
 function ip(req) {
   const h = req.headers?.['x-forwarded-for'];
@@ -70,29 +90,30 @@ function setCookie(res, qiymat) {
   res.setHeader('Set-Cookie', royxat);
 }
 
-export function cookieQoy(res, token, req) {
-  let c = `${COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${MUDDAT}`;
+export function cookieQoy(res, token, req, tur) {
+  let c = `${cookieNomi(tur)}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${MUDDAT}`;
   if (xavfsizmi(req)) c += '; Secure';
   setCookie(res, c);
 }
 
-export function cookieOchir(res, req) {
-  let c = `${COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`;
+export function cookieOchir(res, req, tur) {
+  let c = `${cookieNomi(tur)}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`;
   if (xavfsizmi(req)) c += '; Secure';
   setCookie(res, c);
 }
 
 /* Vercel `req.cookies` beradi, dev.mjs bermaydi — ikkalasi ham */
-function cookieOl(req) {
-  if (req?.cookies && typeof req.cookies === 'object' && req.cookies[COOKIE]) {
-    return String(req.cookies[COOKIE]);
+function cookieOl(req, tur) {
+  const nom = cookieNomi(tur);
+  if (req?.cookies && typeof req.cookies === 'object' && req.cookies[nom]) {
+    return String(req.cookies[nom]);
   }
   const xom = req?.headers?.cookie;
   if (typeof xom !== 'string') return null;
   for (const bolak of xom.split(';')) {
     const t = bolak.indexOf('=');
     if (t < 0) continue;
-    if (bolak.slice(0, t).trim() !== COOKIE) continue;
+    if (bolak.slice(0, t).trim() !== nom) continue;
     const v = bolak.slice(t + 1).trim();
     if (!v) return null;
     try { return decodeURIComponent(v); } catch { return v; }
@@ -101,32 +122,41 @@ function cookieOl(req) {
 }
 
 /* ---------- Sessiya ---------- */
-export async function sessiyaOch(res, foydalanuvchi_id, req) {
+export async function sessiyaOch(res, foydalanuvchi_id, req, tur) {
+  const t = turNormal(tur);
   const token = tokenYarat();
   await q(
-    `insert into sessiyalar (foydalanuvchi_id, token_hash, amal_qiladi, ip, agent)
-     values ($1, $2, now() + ($3 * interval '1 second'), $4, $5)`,
-    [foydalanuvchi_id, tokenHash(token), MUDDAT, ip(req), String(req?.headers?.['user-agent'] || '').slice(0, 300)]
+    `insert into sessiyalar (foydalanuvchi_id, token_hash, tur, amal_qiladi, ip, agent)
+     values ($1, $2, $3, now() + ($4 * interval '1 second'), $5, $6)`,
+    [
+      foydalanuvchi_id, tokenHash(token), t, MUDDAT,
+      ip(req), String(req?.headers?.['user-agent'] || '').slice(0, 300),
+    ]
   );
-  cookieQoy(res, token, req);
+  cookieQoy(res, token, req, t);
   return token;
 }
 
-export async function sessiyaOl(req) {
-  const token = cookieOl(req);
+/* Sessiya turi SQL darajasida ham tekshiriladi: xodim tokenini mg_admin
+   cookie'siga ko'chirib qo'yish ish bermaydi. */
+export async function sessiyaOl(req, tur) {
+  const t = turNormal(tur);
+  const token = cookieOl(req, t);
   if (!token) return null;
 
   let r;
   try {
     r = await q(
-      `select f.id, f.ism_familiya, f.username, f.rol, f.faol, s.id as sessiya_id
+      `select f.id, f.ism_familiya, f.username, f.rol, f.faol,
+              s.id as sessiya_id, s.tur
          from sessiyalar s
          join foydalanuvchilar f on f.id = s.foydalanuvchi_id
         where s.token_hash = $1
+          and s.tur = $2
           and s.amal_qiladi > now()
           and f.faol = true
         limit 1`,
-      [tokenHash(token)]
+      [tokenHash(token), t]
     );
   } catch (e) {
     console.error('sessiyaOl:', e.message);
@@ -142,51 +172,56 @@ export async function sessiyaOl(req) {
   return r[0] || null;
 }
 
-/* Sliding muddat: GET /api/men da sessiya yana 30 kunga uzayadi va cookie qayta qo'yiladi.
-   Token faqat shu modulda ochiladi, shuning uchun uzaytirish ham shu yerda. */
-export async function sessiyaUzaytir(req, res) {
-  const token = cookieOl(req);
+/* Sliding muddat: /api/men va /api/admin-men da sessiya yana 30 kunga uzayadi. */
+export async function sessiyaUzaytir(req, res, tur) {
+  const t = turNormal(tur);
+  const token = cookieOl(req, t);
   if (!token) return false;
   try {
     const r = await q(
-      `update sessiyalar set amal_qiladi = now() + ($2 * interval '1 second')
-        where token_hash = $1 and amal_qiladi > now()
+      `update sessiyalar set amal_qiladi = now() + ($3 * interval '1 second')
+        where token_hash = $1 and tur = $2 and amal_qiladi > now()
         returning id`,
-      [tokenHash(token), MUDDAT]
+      [tokenHash(token), t, MUDDAT]
     );
     if (!r.length) return false;
   } catch (e) {
     console.error('sessiyaUzaytir:', e.message);
     return false;
   }
-  cookieQoy(res, token, req);
+  cookieQoy(res, token, req, t);
   return true;
 }
 
-export async function sessiyaYop(req, res) {
-  const token = cookieOl(req);
+/* Faqat ko'rsatilgan turdagi sessiyani yopadi — ikkinchisi tegilmaydi. */
+export async function sessiyaYop(req, res, tur) {
+  const t = turNormal(tur);
+  const token = cookieOl(req, t);
   if (token) {
     try {
-      await q(`delete from sessiyalar where token_hash = $1`, [tokenHash(token)]);
+      await q(`delete from sessiyalar where token_hash = $1 and tur = $2`, [tokenHash(token), t]);
     } catch (e) {
       console.error('sessiyaYop:', e.message);
     }
   }
-  cookieOchir(res, req);
+  cookieOchir(res, req, t);
 }
 
 /* ---------- Guard'lar ----------
    Ruxsat bo'lmasa javobni O'ZI yozadi va null qaytaradi.
    Chaqiruvchi:  const u = await talab(req,res); if(!u) return; */
+
+/* Xodim sessiyasi (mg_sess) */
 export async function talab(req, res) {
-  const u = await sessiyaOl(req);
+  const u = await sessiyaOl(req, 'xodim');
   if (!u) { json(res, 401, { xato: 'Avval tizimga kiring' }); return null; }
   return u;
 }
 
+/* Admin sessiyasi (mg_admin) — xodim cookie'si bu yerda ish bermaydi */
 export async function talabAdmin(req, res) {
-  const u = await sessiyaOl(req);
-  if (!u) { json(res, 401, { xato: 'Avval tizimga kiring' }); return null; }
+  const u = await sessiyaOl(req, 'admin');
+  if (!u) { json(res, 401, { xato: 'Avval admin sifatida kiring' }); return null; }
   if (u.rol !== 'admin') { json(res, 403, { xato: 'Faqat admin uchun' }); return null; }
   return u;
 }

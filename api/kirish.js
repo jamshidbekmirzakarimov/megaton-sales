@@ -43,7 +43,8 @@ export default async function handler(req, res) {
 
     if (!user.faol) return json(res, 403, { xato: "Hisobingiz to'xtatilgan" });
 
-    await sessiyaOch(res, user.id, req);
+    /* 'xodim' turi → mg_sess cookie. Admin sessiyasi (mg_admin) tegilmaydi. */
+    await sessiyaOch(res, user.id, req, 'xodim');
     const javoblar = await javoblarniOl(user.id);
 
     return json(res, 200, {

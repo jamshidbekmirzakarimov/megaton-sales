@@ -58,11 +58,19 @@ create table public.foydalanuvchilar (
 
 -- ------------------------------------------------------------
 -- 2) SESSIYALAR — cookie'dagi token faqat sha256 XESH holida saqlanadi
+--
+--    IKKI MUSTAQIL SESSIYA: bir brauzerda xodim ham, admin ham
+--    bir vaqtda turishi mumkin. Ular alohida cookie'da yotadi:
+--      tur='xodim' -> mg_sess   (/ sahifasi)
+--      tur='admin' -> mg_admin  (/admin sahifasi)
+--    `tur` ustuni SQL darajasida ham tekshiriladi, shuning uchun
+--    xodim tokenini admin slotiga ko'chirib qo'yish ish bermaydi.
 -- ------------------------------------------------------------
 create table public.sessiyalar (
   id               uuid primary key default gen_random_uuid(),
   foydalanuvchi_id uuid not null references public.foydalanuvchilar(id) on delete cascade,
   token_hash       text not null unique,
+  tur              text not null default 'xodim' check (tur in ('xodim','admin')),
   yaratilgan       timestamptz not null default now(),
   amal_qiladi      timestamptz not null,
   ip               text,
@@ -70,6 +78,7 @@ create table public.sessiyalar (
 );
 create index sessiyalar_user_idx   on public.sessiyalar (foydalanuvchi_id);
 create index sessiyalar_muddat_idx on public.sessiyalar (amal_qiladi);
+create index sessiyalar_tur_idx    on public.sessiyalar (tur);
 
 
 -- ------------------------------------------------------------

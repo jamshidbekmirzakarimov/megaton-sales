@@ -21,10 +21,11 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 
 const API = {
-  '/api/kirish':       './api/kirish.js',        // xodim — ism bilan
-  '/api/admin-kirish': './api/admin-kirish.js',  // admin — username + parol
-  '/api/chiqish':      './api/chiqish.js',
-  '/api/men':          './api/men.js',
+  '/api/kirish':       './api/kirish.js',        // xodim — ism bilan     (mg_sess)
+  '/api/admin-kirish': './api/admin-kirish.js',  // admin — username+parol (mg_admin)
+  '/api/chiqish':      './api/chiqish.js',       // {tur} — faqat o'shani yopadi
+  '/api/men':          './api/men.js',           // xodim sessiyasi
+  '/api/admin-men':    './api/admin-men.js',     // admin sessiyasi
   '/api/javoblar':     './api/javoblar.js',
   '/api/hisobot':      './api/hisobot.js',
 };

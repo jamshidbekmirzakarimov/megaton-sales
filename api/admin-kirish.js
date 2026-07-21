@@ -42,7 +42,9 @@ export default async function handler(req, res) {
     await q('update public.foydalanuvchilar set oxirgi_kirish = now() where id = $1', [user.id]);
 
     urinishTozala(rl);
-    await sessiyaOch(res, user.id, req);
+    /* 'admin' turi → mg_admin cookie. Xodim sessiyasi (mg_sess) tegilmaydi:
+       bir brauzerda ikkalasi ham bir vaqtda ochiq turaveradi. */
+    await sessiyaOch(res, user.id, req, 'admin');
 
     return json(res, 200, {
       foydalanuvchi: {

@@ -358,13 +358,15 @@ async function panelniOch(){
   }
 }
 
-/* ---- sahifa ochilganda: GET /api/men ---- */
+/* ---- sahifa ochilganda: GET /api/admin-men ----
+   ADMIN sessiyasi (mg_admin) alohida cookie'da. Xodim sifatida kirgan bo'lsangiz
+   ham bu yerda alohida username/parol so'raladi — ikkalasi aralashmaydi. */
 async function boshla(){
   gateHolat('kutish');
   let r;
-  try{r=await fetch('/api/men',{credentials:'same-origin'})}
+  try{r=await fetch('/api/admin-men',{credentials:'same-origin'})}
   catch(e){gateKorsat('Serverga ulanib bo‘lmadi.');return}
-  if(r.status===401){gateKorsat('');return}
+  if(r.status===401||r.status===403){gateKorsat('');return}
   if(!r.ok){gateKorsat('Serverga ulanib bo‘lmadi.');return}
   let j;try{j=await r.json()}catch(e){gateKorsat('Serverga ulanib bo‘lmadi.');return}
   MEN=j.foydalanuvchi||null;
@@ -398,9 +400,12 @@ async function kir(){
   }finally{b.disabled=false;b.textContent='Kirish'}
 }
 
-/* ---- chiqish ---- */
+/* ---- chiqish ----
+   tur:'admin' — faqat admin sessiyasi yopiladi. Xodim sifatida kirgan
+   bo'lsangiz, / sahifasidagi ishingiz joyida qolaveradi. */
 async function chiq(){
-  try{await fetch('/api/chiqish',{method:'POST',credentials:'same-origin'})}catch(e){}
+  try{await fetch('/api/chiqish',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({tur:'admin'})})}catch(e){}
   location.reload();
 }
 

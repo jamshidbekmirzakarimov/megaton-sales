@@ -716,7 +716,9 @@ document.getElementById('logoutBtn').onclick=async()=>{
   const btn=document.getElementById('logoutBtn');btn.disabled=true;
   clearTimeout(syncTmr);clearTimeout(retryTmr);
   try{if(DIRTY)await pushServer()}catch(e){}          /* saqlanmaganini yuborib ko'ramiz */
-  try{await fetch('/api/chiqish',{method:'POST',credentials:'same-origin'})}catch(e){}
+  /* tur:'xodim' — faqat xodim sessiyasi yopiladi, admin paneli ochiq qolaveradi */
+  try{await fetch('/api/chiqish',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({tur:'xodim'})})}catch(e){}
   keshOchir();
   location.reload();
 };

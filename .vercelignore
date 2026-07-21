@@ -13,3 +13,4 @@ package-lock.json
 .env.local
 .git
 node_modules
+migratsiya_tur.sql

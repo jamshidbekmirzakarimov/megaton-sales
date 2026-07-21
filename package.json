@@ -1,0 +1,19 @@
+{
+  "name": "megaton-savdo-tasdiqlash",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node dev.mjs",
+    "db:push": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f supabase_tables.sql",
+    "dev:vercel": "vercel dev",
+    "admin-parol": "node admin-parol.mjs",
+    "check": "node --check dev.mjs && node --check admin-parol.mjs && node --check api/_db.js && node --check api/_auth.js && node --check api/admin-kirish.js && node --check api/kirish.js && node --check api/chiqish.js && node --check api/men.js && node --check api/javoblar.js && node --check api/hisobot.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

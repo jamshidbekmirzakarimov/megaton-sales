@@ -1,0 +1,13 @@
+node_modules/
+.vercel/
+.env
+.env.local
+
+# ============================================================
+# DIQQAT — api/_db.js ICHIDA BAZA PAROLI TURIBDI.
+# Bu omborni GitHub'ga yuklasangiz, albatta PRIVATE qiling.
+# Ochiq omborga bir marta tushsa ham, botlar Postgres ulanish
+# satrini bir necha soat ichida topadi va bazani buzadi.
+# Parol tushib ketsa: Supabase -> Settings -> Database -> Reset password,
+# keyin api/_db.js dagi qatorni yangilang.
+# ============================================================

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEGATON — Savdo jarayonlari (tasdiqlash)</title>
+<style>
+:root{
+  --bg:#eceff3; --s2:#ffffff; --s1:#f5f7fa; --ink:#1d2530; --sec:#4b5666; --mut:#8b95a4; --line:#dde2e9;
+  --brand:#ef8a17; --brand-bg:#fff3e4; --brand-ink:#a55c07;
+  --ok:#16a34a; --ok-bg:#e7f6ec; --ok-ink:#0f7434;
+  --warn:#d97706; --warn-bg:#fdf1de; --warn-ink:#8a5107;
+  --bad:#dc2626; --bad-bg:#fdeaea; --bad-ink:#a11919;
+  --sys:#2563c9; --sys-bg:#eaf1ff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;height:100vh;overflow:hidden;font-size:14px}
+/* GATE */
+.gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(1000px 500px at 50% -10%,#ffe6c6,transparent),var(--bg)}
+.gatecard{background:var(--s2);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 60px rgba(20,30,45,.16);padding:38px 40px;max-width:440px;width:100%;text-align:center}
+.gatecard svg{width:60px;height:60px;margin-bottom:6px}
+.gatecard .gb{font-size:22px;font-weight:800;color:var(--brand);letter-spacing:.5px}
+.gatecard .gs{font-size:10px;letter-spacing:3px;color:var(--mut);font-weight:700;margin-bottom:18px}
+.gatecard h1{font-size:18px;font-weight:700;margin-bottom:6px}
+.gatecard p{font-size:13.5px;color:var(--sec);line-height:1.5;margin-bottom:18px}
+/* rejim tanlagich: Kirish / Ro'yxatdan o'tish */
+.gate .gtabs{display:flex;gap:4px;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+.gate .gtab{flex:1;padding:9px 8px;border:none;border-radius:9px;background:none;color:var(--sec);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s}
+.gate .gtab:hover{color:var(--brand-ink)}
+.gate .gtab.active{background:var(--s2);color:var(--brand-ink);box-shadow:0 1px 3px rgba(20,30,45,.12)}
+/* forma maydonlari — ko'p maydonli bo'lgani uchun chapga tekislangan */
+.gate .fld{text-align:left;margin-bottom:11px}
+.gate .fld label{display:block;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:5px}
+.gate .ghint{text-align:left;font-size:11.5px;color:var(--mut);line-height:1.45;margin-top:2px}
+.gatecard input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;font-family:inherit;color:var(--ink);background:var(--s2);outline:none;text-align:left}
+.gatecard input:focus{border-color:var(--brand)}
+.gatecard .gbtn{width:100%;margin-top:14px;padding:13px;border:none;border-radius:11px;background:var(--brand);color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s}
+.gatecard .gbtn:disabled{opacity:.4;cursor:not-allowed}
+.gatecard .gbtn:not(:disabled):hover{filter:brightness(1.06)}
+.gatecard .gerr{font-size:12.5px;color:var(--bad);margin-top:10px;min-height:16px;line-height:1.45}
+/* APP */
+#app{display:none;flex-direction:column;height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(--s2);border-bottom:1px solid var(--line);flex:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand svg{width:32px;height:32px;flex:none}
+.brand b{font-size:15px;letter-spacing:.5px;color:var(--brand);display:block;line-height:1}
+.brand span{font-size:8px;letter-spacing:2px;color:var(--mut);font-weight:600}
+.htxt{font-size:12.5px;color:var(--mut)}.htxt b{color:var(--ink);font-size:13.5px}
+.hsp{flex:1}
+.nst{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap;transition:.2s}
+.nst-save{background:var(--s1);color:var(--mut)}
+.nst-ok{background:var(--ok-bg);color:var(--ok-ink)}
+.nst-err{background:var(--bad-bg);color:var(--bad-ink);border:1px solid #f5b5b5}
+.who{font-size:12.5px;color:var(--sec);display:flex;align-items:center;gap:7px}
+.who b{color:var(--ink)}
+.who .un{color:var(--mut);font-size:11.5px;font-weight:600}
+.btn-out{flex:none;padding:6px 13px;border-radius:9px;border:1px solid var(--line);background:var(--s1);color:var(--sec);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s}
+.btn-out:hover{border-color:var(--bad);background:var(--bad-bg);color:var(--bad-ink)}
+.tabbar{display:flex;align-items:center;gap:5px;padding:7px 18px;background:var(--s2);border-bottom:1px solid var(--line);flex:none;overflow-x:auto}
+.tab{padding:7px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--sec);cursor:pointer;border:1px solid transparent;background:none;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.tab:hover{background:var(--s1)}
+.tab .dt{width:8px;height:8px;border-radius:50%;background:var(--tc,#ccc)}
+.tab.active{color:#fff;background:var(--tc,var(--brand))}
+.tab.active .dt{background:#fff}
+.tab .pg{font-size:11px;font-weight:700;background:rgba(0,0,0,.08);padding:1px 7px;border-radius:10px}
+.tab.active .pg{background:rgba(255,255,255,.28)}
+.tbsp{flex:1}
+.progwrap{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--sec);white-space:nowrap}
+.pbar{width:130px;height:8px;background:var(--s1);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ok);border-radius:6px;transition:width .3s}
+/* WRAP: flow (left) + side (right) */
+.wrap{flex:1;display:flex;overflow:hidden}
+.flowarea{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:
+  linear-gradient(90deg,rgba(0,0,0,.02) 1px,transparent 1px) 0 0/24px 24px,
+  linear-gradient(rgba(0,0,0,.02) 1px,transparent 1px) 0 0/24px 24px,var(--bg)}
+.flowhead{flex:none;display:flex;align-items:center;gap:12px;padding:9px 18px;background:rgba(255,255,255,.92);z-index:3;font-size:13px;border-bottom:1px solid var(--line)}
+.flowhead b{font-size:14px}
+.flowhead .lg{display:flex;align-items:center;gap:5px;color:var(--mut);font-size:11.5px}
+.flowhead .lg i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.flowstage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.flowstage svg{width:100%;height:100%;max-height:100%}
+.nd{cursor:pointer}
+.nd .bx{fill:var(--s2);stroke:var(--line);stroke-width:1.5;transition:.15s}
+.nd:hover .bx{stroke:var(--brand)}
+.nd.sel .bx{stroke:var(--brand);stroke-width:2.6;filter:drop-shadow(0 4px 12px rgba(239,138,23,.4))}
+.nd text{pointer-events:none;fill:var(--ink);font-family:inherit}
+.nd .tt{font-size:11.5px;font-weight:600}.nd .stt{font-size:9px;font-weight:700}
+.fedge{fill:none;stroke:#9aa6b6;stroke-width:1.8;marker-end:url(#ar)}
+/* SIDE PANEL */
+.side{flex:0 0 30%;min-width:400px;max-width:600px;background:var(--s2);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.sidehead{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:11px;flex:none}
+.snum{width:38px;height:38px;border-radius:10px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex:none}
+.snum.dia{background:var(--warn)}
+.sttl h3{font-size:16.5px;font-weight:700;line-height:1.2;margin-bottom:5px}
+.spill{display:inline-block;padding:4px 11px;border-radius:20px;font-size:11.5px;font-weight:700}
+.sidebody{flex:1;overflow-y:auto;padding:15px 18px}
+.f{margin-bottom:13px}
+.f .k{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:4px}
+.f .v{font-size:13.5px;line-height:1.5;color:#2b3542}.f .v b{font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;padding:4px 9px;border-radius:7px;background:var(--s1);border:1px solid var(--line);color:var(--sec)}
+.chip.sys,.chip.int{background:var(--sys-bg);border-color:#cfe0ff;color:var(--sys);font-weight:600}
+.chip.maj{background:var(--ok-bg);border-color:#bce3c9;color:var(--ok-ink)}
+.chip.sha{background:var(--warn-bg);border-color:#f2d199;color:var(--warn-ink)}
+.chip.opt{background:var(--s1);border-color:var(--line);color:var(--mut)}
+.stepdesc{font-size:13.5px;line-height:1.62;color:#2b3542;background:linear-gradient(180deg,#fff8ef,#fff);border:1px solid #f4dfc2;border-radius:11px;padding:12px 14px;margin-bottom:14px}
+.datamod{margin:13px 0;border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:linear-gradient(180deg,#fbfcfe,#fff)}
+.dmh{font-size:11.5px;font-weight:800;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.dmg{margin-bottom:9px}.dmg:last-child{margin-bottom:0}
+.dmg .gl{font-size:10px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.dmg .gl .dotc{width:9px;height:9px;border-radius:3px;display:inline-block}
+.callout{border-radius:10px;padding:10px 12px;margin-top:11px;font-size:12.5px;line-height:1.5}
+.callout .ct{font-size:10px;letter-spacing:.6px;text-transform:uppercase;font-weight:700;margin-bottom:4px}
+.co-bad{background:var(--bad-bg)}.co-bad .ct,.co-bad .cx{color:var(--bad-ink)}
+.co-warn{background:var(--warn-bg);border:1px solid #f2d199}.co-warn .ct,.co-warn .cx{color:var(--warn-ink)}
+.co-appr{background:#f7ecfb}.co-appr .ct,.co-appr .cx{color:#8e3ba6}
+.co-dec{background:#eaf2ff}.co-dec .ct,.co-dec .cx{color:#1c4e9c}
+.branches{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.br{font-size:12px;padding:5px 10px;border-radius:7px;background:var(--s2);border:1px solid var(--line);cursor:pointer;font-weight:600}
+.br:hover{border-color:var(--brand)}.br .ar{color:var(--mut);font-weight:400}
+/* side foot approval */
+.sidefoot{flex:none;border-top:1px solid var(--line);background:var(--s1);padding:12px 16px}
+.sfhead{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sfhead .sv{margin-left:auto;color:var(--ok-ink);font-weight:700;opacity:0;transition:.2s}.sfhead .sv.on{opacity:1}
+.apbtns{display:flex;gap:8px;margin-bottom:8px}
+.apbtn{flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:var(--s2);color:var(--sec);font-size:14px;font-weight:700;cursor:pointer}
+.apbtn.ok{border-color:var(--ok);color:var(--ok-ink)} .apbtn.ok.on{background:var(--ok);color:#fff}
+.apbtn.no{border-color:var(--bad);color:var(--bad-ink)} .apbtn.no.on{background:var(--bad);color:#fff}
+.aptext{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;min-height:46px;outline:none;color:var(--ink)}
+.aptext:focus{border-color:var(--brand)}
+.sfnav{display:flex;gap:8px;margin-top:9px}
+.nbtn{flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--s2);color:var(--ink)}
+.nbtn:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
+.nbtn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.nbtn:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:820px){.side{width:100%;min-width:0;position:fixed;right:0;top:0;bottom:0;z-index:50;box-shadow:-8px 0 30px rgba(0,0,0,.15)}
+  .gatecard{padding:28px 22px}}
+</style>
+</head>
+<body>
+<!-- GATE -->
+<div class="gate" id="gate">
+  <div class="gatecard">
+    <svg viewBox="0 0 44 44"><g fill="#ef8a17">
+      <path d="M18 6 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+      <path d="M10 22 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+    </g></svg>
+    <div class="gb">MEGATON</div><div class="gs">AVTOKLAV GAZOBLOK</div>
+    <h1>Savdo jarayonlari — tasdiqlash</h1>
+    <p>Har bir bosqichni ko‘rib chiqib tasdiqlaysiz yoki izoh yozasiz. Davom etish uchun ism-familiyangizni kiriting.</p>
+
+    <form id="formKirish">
+      <div class="fld">
+        <label for="loginIsm">Ism-familiya</label>
+        <input id="loginIsm" name="ism_familiya" type="text" autocomplete="name" placeholder="Ism Familiya">
+        <div class="ghint">Parol kerak emas. Javoblaringiz shu ism ostida saqlanadi —
+          keyingi safar ayni shu ismni yozsangiz, yozganlaringiz joyida turadi.</div>
+      </div>
+      <button type="submit" class="gbtn" id="loginBtn">Kirish</button>
+    </form>
+
+    <div class="gerr" id="gateErr" role="alert" aria-live="assertive"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 44 44"><g fill="#ef8a17">
+        <path d="M18 6 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+        <path d="M10 22 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+      </g></svg>
+      <div><b>MEGATON</b><span>AVTOKLAV GAZOBLOK</span></div>
+    </div>
+    <div class="hsp"></div>
+    <span class="nst" id="netStat" aria-live="polite"></span>
+    <div class="who">Tekshiruvchi: <b id="whoName"></b> <span class="un" id="whoUser"></span></div>
+    <button type="button" class="btn-out" id="logoutBtn">Chiqish</button>
+  </header>
+  <div class="tabbar" id="tabbar"></div>
+  <div class="wrap">
+    <div class="flowarea">
+      <div class="flowhead">
+        <b id="flowtitle"></b>
+        <span class="lg"><i style="background:var(--ok)"></i>Tasdiq</span>
+        <span class="lg"><i style="background:var(--bad)"></i>Rad</span>
+        <span class="lg"><i style="background:var(--warn)"></i>Izohli</span>
+        <span class="lg"><i style="background:var(--mut)"></i>Kutilmoqda</span>
+        <span style="margin-left:auto;color:var(--mut);font-size:12px" id="flowhint"></span>
+      </div>
+      <div class="flowstage" id="flowsvg"></div>
+    </div>
+    <aside class="side">
+      <div class="sidehead" id="sHead"></div>
+      <div class="sidebody" id="sBody"></div>
+      <div class="sidefoot" id="sFoot"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const ST={
+ New:['New','#64748b','#eef1f5'], Aniqlangan:['Aniqlangan','#64748b','#eef1f5'],
+ Kvalifikatsiya:['Kvalifikatsiya','#3b82f6','#eaf2ff'], KP:['KP','#8b5cf6','#f1ebfb'],
+ Muzokara:['Muzokara','#d97706','#fdf1de'], Shartnoma:['Shartnoma / Approval','#0ea5e9','#e6f5fd'],
+ Tayyorgarlik:['To’lov / tayyorgarlik','#ef8a17','#fff3e4'], Yetkazish:['Yuklash / Yetkazish','#0d9488','#e3f6f3'],
+ Won:['Won','#16a34a','#e7f6ec'], Lost:['Lost','#dc2626','#fdeaea'], Frozen:['Frozen','#64748b','#eef1f5'],
+ Tender:['Tender jarayoni','#16a34a','#e7f6ec'], Export:['Export jarayoni','#8b5cf6','#f1ebfb']
+};
+function sc(s){return (ST[s]||ST.New)}
+
+const SEG={
+ umumiy:{name:'Umumiy',tc:'#ef8a17',title:'Umumiy jarayon',steps:[
+  {t:'Mijoz / imkoniyat paydo bo’ladi',st:'New',
+   d:'Butun savdo jarayoni to’rtta mustaqil kanaldan boshlanadi va hammasi bitta umumiy PIPELINE bazasiga tushadi: Regional Sales menejeri dala aylanishida yangi qurilish obyektini topganda (B2B), Call Center telefon yoki onlayn murojaatni AmoCRM’ga lead sifatida kiritganda (B2C), B2G mas’uli new.cooperation.uz platformasida davlat xarid so’rovini ko’rganda (B2G), Export menejeri xorijiy so’rov olganda (Export). Har bir imkoniyat uchun Lead Source — mijoz qaysi kanaldan kelgani majburiy qayd etiladi, chunki bu qaysi kanal eng ko’p va eng sifatli mijoz olib kelayotganini tahlil qilish uchun zarur. Hozirgi holatda kuniga B2C bo’yicha 15 tagacha mijoz zavodga o’zi tashrif buyuradi, AmoCRM’dan o’rtacha 3–4 lead keladi, B2B’da menejer obyektga o’zi boradi. Eng sifatli manba — tavsiya (usta, pudratchi, eski mijoz).',
+   kim:'4 kanal: Regional Sales menejeri (B2B) · Call Center (B2C) · B2G mas’uli · Export menejeri',qachon:'Dala kuzatuvida obyekt topilganda, qo’ng’iroq yoki onlayn murojaat kelganda, tender e’loni chiqqanda yoki xorijiy so’rov kelganda',kirish:['Kanal (B2B/B2C/B2G/Export)','Lead Source — mijoz manbasi','Mijoz ismi / kompaniya nomi','Telefon','Hudud (viloyat/tuman/davlat)','Taxminiy ehtiyoj (m³)'],manba:'Dala kuzatuvi va tavsiya (B2B) · AmoCRM va Call Center (B2C) · new.cooperation.uz (B2G) · bozor tadqiqoti va to’g’ridan so’rov (Export)',natija:'Yangi imkoniyat yozuvi — yagona PIPELINE bazasida, manbasi qayd etilgan holda',keyingi:'Yagona mijoz kartasi (CL-ID) yaratish',tizim:['AmoCRM (B2C lead)'],muammo:'Hozir manba faqat B2C uchun AmoCRM’da qayd etiladi; boshqa kanallarda Lead Source yozilmaydi, shu sababli qaysi kanal qancha pul olib kelayotgani aniq ko’rinmaydi. AmoCRM leadlari tekshirilmaydi.'},
+  {t:'Yagona mijoz kartasi (CL-ID)',st:'Kvalifikatsiya',
+   d:'Mijoz qaysi kanaldan kelmasin, tizimda unga bitta takrorlanmaydigan karta (CL-ID) ochiladi. Yuridik shaxs uchun STIR, jismoniy shaxs uchun telefon raqami unikallik kaliti bo’ladi — bir mijoz nechta kanalda uchrasa ham bitta karta hisoblanadi. Hozirgi holatda ma’lumotlar tarqoq: B2B mijozlari Google Sheets va umumiy Excel bazada, B2C mijozlari AmoCRM’da, lekin data connection yo’q, shuning uchun takrorlanish tekshirilmaydi va eski mijoz tarixi qidirsa topiladi-yu, ko’p vaqt oladi. Yangi tizim eski mijoz qayta murojaat qilganda uning to’liq tarixini (oldingi buyurtmalar, to’lov intizomi, aloqalar) darhol ko’rsatishi kerak. B2B’da oxirgi 6 oy ichida faol bo’lmagan mijoz yangi mijoz sifatida qayta baholanadi.',
+   kim:'Kanal menejeri + CRM administratsiya',qachon:'Imkoniyat yaratilganidan so’ng darhol',kirish:['Ism yoki kompaniya nomi','STIR (yuridik) yoki telefon (jismoniy)','Manzil','Mijoz turi / toifa','Faoliyat turi'],manba:'Mijozdan olinadi yoki mavjud karta bazadan topiladi (STIR/telefon bo’yicha)',natija:'Yagona CL-ID karta — toifa, tarix, aloqalar va hujjatlar bir joyda',keyingi:'Ehtiyojni aniqlash',tizim:['Yagona mijozlar bazasi (MB)','AmoCRM'],qoida:'Mijoz nechta kanalda bo’lsa ham — BITTA karta. STIR yoki telefon takrorlansa mijoz bitta hisoblanadi.',muammo:'Hozir B2B — Google Sheets, B2C — AmoCRM’da; datalar bog’lanmagan, dublikat va tarix nazorat qilinmaydi.'},
+  {t:'Ehtiyojni aniqlash',st:'Kvalifikatsiya',
+   d:'Menejer mijoz bilan aloqa o’rnatib, uning aniq ehtiyojini shakllantiradi: qanday loyiha qurilyapti (xonadon, ombor, ko’p qavatli bino), qancha hajm kerak, qaysi o’lcham va nav mos keladi. Megaton mahsuloti — avtoklavlangan gazoblok, uzunligi 625 mm, balandligi 300 mm, eni 100/120/150/200/250/300/400 mm, 1-nav / 2-nav / brak navlarida, faqat qadoq holatida sotiladi. Menejer bepul texnik maslahat beradi: tashqi devor uchun odatda 400/300/250 lik (issiqlik va tovush izolyatsiyasi uchun), ichki devor uchun 200 lik tavsiya qilinadi. Ehtiyoj aniq m³ da, so’mda va "1 m² devor qancha turadi" ko’rinishida hisoblab beriladi. Bir mijoz bir yukda bir nechta o’lcham olishi mumkin (qadoq buzilmasa).',
+   kim:'Kanal menejeri (bepul texnik maslahat bilan)',qachon:'Mijoz bilan aloqa o’rnatilgach',kirish:['Loyiha turi','Kerakli hajm (m³)','O’lcham + nav (1/2-nav)','Yetkazish manzili','Xarid muddati'],manba:'Mijoz talabi + menejerning texnik hisob-kitobi',natija:'Aniqlashtirilgan ehtiyoj + 1 m² devor iqtisodi hisobi',keyingi:'Narx taklifi (KP)',qoida:'Texnik maslahat va hajm hisob-kitobi — bepul xizmat. Faqat qadoqdagi mahsulot sotiladi.'},
+  {t:'Narx taklifi (KP) — yagona katalog',st:'KP',
+   d:'Ehtiyoj aniqlangach menejer yagona narx katalogidan rasmiy tijorat taklifi (KP) tayyorlaydi. Narxlarni Savdo bo’lim rahbari tasdiqlaydi: B2C’da narx qat’iy belgilangan, chegirma yo’q; B2B’da tasdiqlangan mijoz toifalari (Bazaviy, Standart, Hamkor, Strategik, Mister X) bo’yicha menejer erkin harakat qiladi; Export’da narx USD’da beriladi. KP Google Docs shablonida tayyorlanadi va mijoz talabiga ko’ra Email, Telegram yoki bosma shaklda yuboriladi. Taklif 1 oy amal qiladi. Hozirgi muammo — yuborilgan KP statusi (ko’rildi/rad etildi) hech qayerda saqlanmaydi.',
+   kim:'Kanal menejeri (bo’lim rahbari tayyorlaydi, Savdo rahbari tasdiqlaydi)',qachon:'Ehtiyoj aniqlangach',kirish:['Mijoz toifasi','O’lcham / nav','Transport turi','Hajm (m³)','Valyuta (Export uchun USD)'],manba:'Yagona narx katalogi (Savdo rahbari tasdiqlagan)',natija:'Rasmiy tijorat taklifi (KP) — PDF / Email / Telegram',keyingi:'Kelishuv va qaror',muammo:'Yuborilgan takliflar tarixi va statusi saqlanmaydi — "shunchaki yuborib qo’yiladi".',ochiq:'Narx tierlari (Bazaviy / Standart / Hamkor / Strategik / Mister X — so’m/m³ aniq raqamlar) hali tasdiqlanmagan.'},
+  {t:'Kelishuv va qaror',st:'Muzokara',
+   d:'Muzokara bosqichida narx, hajm, to’lov va yetkazish shartlari kelishiladi. Mijoz rozi bo’lmasa, uning e’tiroziga qarab yechim taklif qilinadi (chegirma o’rniga bepul yetkazish yoki muddat). Agar kelishuvga erishilsa — shartnomaga o’tiladi; erishilmasa — Lost (yo’qotildi) statusi bilan yopiladi va sabab majburiy yoziladi; keyinroq bo’lsa — Frozen (muzlatilgan) statusiga o’tadi. B2B’da yo’qotilgan mijoz bilan aloqa uzilmaydi (qayta sotuv imkoniyati bor), B2C’da yo’qotilgan mijoz "o’lik" hisoblanadi, Export’da bu holat kam uchraydi.',
+   kim:'Menejer · Pricing · Savdo rahbari',qachon:'Muzokara bosqichida',kirish:['KP','Mijoz e’tirozi','So’ralgan chegirma / shart'],manba:'Mijoz bilan muzokara',natija:'Kelishilgan shartlar YOKI yo’qotish sababi',keyingi:'Shartnoma',dec:{q:'Kelishildimi?',br:[{l:'Ha → shartnoma',to:5},{l:'Yo’q → Lost (sabab majburiy)'},{l:'Keyinroq → Frozen'}]},muammo:'Yo’qotish sababi va aloqa tarixi (kim, qachon, nima gaplashildi) hozir tizimli qayd etilmaydi.'},
+  {t:'Shartnoma',st:'Shartnoma',
+   d:'Kelishuvdan so’ng shartnoma tuziladi. Barcha bo’limlar uchun shartnoma bir xil kerak, faqat B2C jismoniy shaxs uchun shart emas. Bo’lim rahbari tijorat shartlarini tayyorlaydi, Savdo bo’lim rahbari tasdiqlaydi, zavodga bog’langan yuridik firma huquqiy tomonini ko’rib rasmiy hujjat shakllantiradi. B2B/B2G shartnomalari Didox orqali elektron imzolanadi, Export shartnomalari Econtract Online orqali rasmiylashtiriladi. Shablonni faqat yuridik bo’lim va vakolatli shaxslar o’zgartira oladi; har bir shablon versiyasi saqlanadi va yangi versiya eski imzolangan shartnomalarga qo’llanilmaydi. Ma’lumot modeli: Mijoz → Shartnoma → Obyekt → Buyurtma → Yetkazish; bitta shartnoma ko’p obyekt va ko’p buyurtmani qamrashi mumkin.',
+   kim:'Shartnoma bo’limi / yurist (Savdo rahbari tasdig’i bilan)',qachon:'Kelishuvdan keyin',kirish:['Mijoz STIR','Summa, hajm (m³), muddat','To’lov sharti','Yetkazish sharti','Bog’langan obyekt(lar)'],manba:'Kelishilgan tijorat shartlari',natija:'Imzolangan shartnoma → reestrga (versiya tarixi bilan)',keyingi:'Buyurtma → SAP rezerv',tizim:['Didox (B2B/B2G)','Econtract (Export)'],qoida:'Bir shartnoma → ko’p obyekt va ko’p buyurtma. Shablonni faqat vakolatli shaxs o’zgartiradi.'},
+  {t:'Buyurtma → SAP rezerv',st:'Tayyorgarlik',
+   d:'Shartnoma asosida buyurtma yaratiladi va SAP’da mahsulot rezerv qilinadi. Buyurtma savdo menejeri tomonidan yaratiladi; hozir buyurtma raqami SAP’da avtomatik shakllanadi. Buyurtma tasdiqlanmaguncha menejer o’zi o’zgartirishi yoki bekor qilishi mumkin, tasdiqlangandan keyin faqat Savdo bo’lim rahbari ruxsati bilan. Rezerv bosqichma-bosqich: Forecast (1–2 oy oldindan prognoz) → Hot (14 kun ichidagi issiq bron) → SAP Real (to’lovdan keyin). Zaxira 4 kanalga umumiy, shuning uchun katta buyurtma kelganda qayta taqsimlanishi mumkin. Bir vaqtda bir nechta mijoz bir xil mahsulotni bron qilsa, ustuvorlik: to’lovi kelgan buyurtma → oldin tasdiqlangan (FIFO) → yetkazish sanasi eng yaqin → strategik mijoz.',
+   kim:'Sales Operations / Ombor (SAP)',qachon:'Shartnomadan keyin',kirish:['Mijoz','O’lcham × nav','Hajm (m³)','Narx','Yetkazish sanasi'],manba:'Shartnoma',natija:'Buyurtma ERP’da + SAP rezerv (erkin qoldiq / ATP)',keyingi:'Ishlab chiqarish / ombor',tizim:['SAP (ikki tomonlama integratsiya)'],qoida:'Zaxira 4 kanalga umumiy. Rezerv: Forecast → Hot → Real. Production Reservation hech qachon to’langan buyurtmadan ustun bo’lmaydi.',ochiq:'Order ID manbai: SAP avtomatik vs platforma Sequence — hal qilinishi kerak.'},
+  {t:'Ishlab chiqarish / ombor',st:'Tayyorgarlik',
+   d:'Agar ombor qoldig’i buyurtmani qoplamasa, ketma-ketlik: 1) muqobil o’lcham/nav taklif qilinadi, 2) ishlab chiqarishga buyruq beriladi, 3) mijoz kutadi. Mahsulot navi (1-nav / 2-nav / brak) ishlab chiqarish natijasida aniqlanadi. Qoldiq minimal limitga tushganda tizim avto-zakaz signalini berishi kerak (razmerlar bo’yicha). Yangi tizimda ombor qoldig’i SAP integratsiyasi orqali real vaqtga yaqin ko’rinadi: har o’lcham/nav bo’yicha mavjud hajm, rezerv, erkin qoldiq va taxminiy tayyor bo’lish sanasi. Hozir SAP uchun HTML interfeys bor, lekin real API integratsiyasi yakunlanmagan.',
+   kim:'Ishlab chiqarish · Ombor',qachon:'Ombor qoldig’i yetmasa',kirish:['Buyurtma / rezerv','Yetishmayotgan hajm (m³)','O’lcham × nav'],manba:'SAP ishlab chiqarish moduli',natija:'Tayyor mahsulot, ombor qoldig’i yangilanadi',keyingi:'Yuklash va logistika',tizim:['SAP'],qoida:'Qoldiq yetmasa: 1-muqobil, 2-ishlab chiqarishga buyruq, 3-kutish. Min-limitga tushsa avto-zakaz signali.'},
+  {t:'Yuklash va logistika',st:'Yetkazish',
+   d:'To’lov tasdiqlangandan keyin logistika mahsulotni yuklaydi. Transport turi buyurtma hajmiga qarab tanlanadi: to’liq fura (katta hajm, bepul yetkazish) yoki manipulyator (kichikroq hajm, har m³ uchun +30 000 so’m). Fura sig’imiga yetmagan hajm uchun to’lmagan qism xarajati mijozdan olinishi mumkin. Kichik hajmlarda istisno tariqasida labo/bongo/Isuzu logistikasi taklif qilinadi (bu holatda mijoz haydovchiga o’zi to’laydi, Megaton faqat moshina topib beradi). Zavodning o’z balansida yuk mashinalari bor, qo’shimcha logistika firma bilan shartnoma orqali. Transport bo’limi yo’q — marshrutni haydovchi o’zi belgilaydi. Export’da yuk FCA nuqtasigacha yetkaziladi.',
+   kim:'Logistika · Ombor',qachon:'To’lov tasdig’idan keyin',kirish:['Tayyor buyurtma','Transport turi (fura / manipulyator / mijoz transporti)','Yetkazish manzili + GPS'],manba:'Yuklash grafigi',natija:'Yo’lda yuk — Delivery statusi (Yuklandi → Zavoddan chiqdi → Yo’lda)',keyingi:'Yetkazish va qabul',tizim:['SAP','Bojxona portali (Export)'],qoida:'To’liq fura — bepul yetkazish; manipulyator — har m³ uchun +30 000 so’m; chala hajm xarajati mijoz zimmasida.'},
+  {t:'Yetkazish va qabul',st:'Yetkazish',
+   d:'Yuk manzilga yetib borganda qabul qilinadi va tasdiqlanadi. Hozirgi eng katta muammo — zavodni tark etgan yukning kuzatuvi yo’q, yetkazilgani mijoz bilan aloqadan keyin bilinadi, rasmiy tasdiq fayli yo’q. Yangi tizimda yetkazish GPS koordinata, foto, TTN/CMR va qabul qiluvchi imzosi bilan tasdiqlanadi; On-Time Delivery (OTD) ko’rsatkichi avtomatik hisoblanadi (rejalashtirilgan va haqiqiy vaqt solishtiriladi). Kechikish yuz bersa sabab majburiy tanlanadi (transport nosozligi, tirbandlik, ob-havo, ishlab chiqarish/ombor kechikishi, hujjat tayyor emasligi va h.k.). Kechikish — mijoz yo’qotishning №1 sababi.',
+   kim:'Logistika · Customer Support',qachon:'Yuk yo’lga chiqqach',kirish:['Yo’ldagi yuk','Qabul qiluvchi shaxs'],manba:'Haydovchi / mijoz tasdig’i (GPS, foto, TTN/CMR)',natija:'Yetkazish tasdig’i + On-Time statistika',keyingi:'To’lov nazorati',muammo:'Zavodni tark etgach kuzatuv yo’q; yetkazish tasdig’i fayli mavjud emas — hozir Excel + telefon orqali. Kechikish — mijoz yo’qotishning №1 sababi.'},
+  {t:'To’lov nazorati',st:'Tayyorgarlik',
+   d:'Megaton’da asosiy qoida — 100% oldindan to’lov, avans yo’q; mahsulot hisob raqamiga mablag’ amalda tushib, bank tasdiqlagandan keyingina yuklanadi. To’lov topshiriqnomasi, skrinshot yoki og’zaki va’da to’lov hisoblanmaydi. To’lov usullari: naqd, bank o’tkazmasi, plastik, onlayn (Click, Payme, Alif, Paynet). B2C’da yuk yetib borganda kassa cheki bilan to’liq to’lov ham bo’ladi. To’lov kechiksa mijoz bloklanadi — yangi yuk to’xtaydi (faqat rahbariyat istisno ruxsatidan tashqari). Bank ma’lumoti faqat o’qish uchun (STIR/INN matching). Payment Velocity (to’lov tezligi) ko’rsatkichi mijoz kartasida yuritiladi.',
+   kim:'Moliya / Kassir',qachon:'Yuk / yetkazish atrofida',kirish:['Bank yoki kassa tushumi','To’lov turi','Summa va sana'],manba:'Bank (STIR/INN matching) + TimePay + kassa',natija:'To’lov statusi (Faol / To’lov kutilmoqda / Risk / Blokda) + Payment Velocity',keyingi:'Xizmat va qayta sotuv',tizim:['Bank','TimePay'],qoida:'100% oldindan to’lov — to’lovsiz yuk chiqmaydi. Bank ma’lumoti faqat o’qiladi.',ochiq:'Debitorlik / balans manbai (SAP yoki 1C) — hal qilinishi kerak.'},
+  {t:'Xizmat va qayta sotuv',st:'Won',
+   d:'Sotuvdan keyin mijoz bilan aloqa saqlanadi. B2C’da marketing maqsadida aloqa bo’lishi mumkin, B2B va Export’da doimiy aloqa yuritiladi. Maqsad — takroriy xarid va sodiqlik: qayta xaridor yangi mijoz jalb qilishdan ~5 barobar arzon. Perspektiv mijozlar (ayniqsa B2C’da ustalar) alohida kuzatiladi, chunki qayta sotuv imkoniyati katta. Sodiqlik dasturi hozir yo’q — yangi tizimda ishlab chiqiladi. Reklamatsiya bo’lsa: dalil (foto/video) va partiya raqami o’rganiladi, 2 ish kunida laboratoriya tekshiradi, zarurat bo’lsa mutaxassis obyektga boradi; mijoz haq bo’lsa to’liq yoki qisman kompensatsiya (zararni Savdo rahbari, kompensatsiyani Direktor tasdiqlaydi).',
+   kim:'Customer Support · Loyalty · KAM',qachon:'Sotuvdan keyin',kirish:['Mijoz fikri','Sotuv natijasi','Reklamatsiya (bo’lsa)'],manba:'Sotuvdan keyingi aloqa',natija:'Qayta buyurtma → PIPELINE, mijoz tarixi boyiydi',keyingi:'Boshqaruv sikli',qoida:'Qayta xaridor yangi mijozdan ~5x arzon. Zavod aybi bo’lsa logistika xarajati zavod zimmasida.'},
+  {t:'Boshqaruv sikli',st:'Won',
+   d:'Barcha bosqichlardan kunlik ma’lumot Sales Analytics’ga oqadi: kunlik, oylik, yillik hisobotlar, reja/fakt, konversiya, forecast. Analytics → Direktor qarori → Task Center (vazifalar) → oy yakunida KPI/bonus hisobi. Hozir KPI asosan reja bajarilishi bo’yicha; menejerlarga individual oylik reja hali belgilanmagan (faqat bo’lim rejalari bor), bonus tizimi hozircha yo’q — keyinchalik joriy etiladi. Eng yaxshi menejer va eng ko’p sotilgan mahsulot menejer kiritgan va bajarilgan buyurtmalar hajmidan aniqlanadi. Ideal jarayon — har mijoz oqimi taqdiri to’liq nazorat ostida, butun jarayon ko’rinadi.',
+   kim:'Sales Analytics · Direktor · barcha menejerlar',qachon:'Parallel, har kuni',kirish:['Barcha bosqichlardan kunlik data','Reja / fakt','Konversiya'],manba:'Tizim (barcha modullar)',natija:'Analytics → Direktor qarori → Task Center → oy yakuni KPI/bonus',keyingi:'Yangi kun rejasi',ochiq:'Bonus formulasi koeffitsiyentlari (Bazaviy × Reja × KPI × Rentabellik) va individual reja hali tasdiqlanmagan.'},
+ ]},
+ b2b:{name:'B2B',tc:'#3b82f6',title:'B2B — Obyekt asosida sotuv',steps:[
+  {t:'Obyekt topish va pasport',st:'Aniqlangan',
+   d:'B2B sotuv qurilish obyekti asosida boshqariladi: bitta developerning bir nechta obyekti bo’lishi mumkin va har bir obyekt mustaqil savdo birligi. Menejer (Hunter / Senior Farmer / Farmer) yangi qurilishni dala aylanishida, xaritalar, usta va pudratchi tavsiyasi ("bir piyola choy"), insayd yoki raqobatchi ishlayotgan obyektlarni kuzatish orqali topadi. Har obyekt uchun to’liq obyekt pasporti ochiladi: GPS/manzil, developer va bosh pudratchi, qurilish bosqichi (poydevor → karkas → devor → pardoz), umumiy ehtiyoj m³, kerakli o’lchamlar, taxminiy xarid sanasi, LPR va kontaktlar, amaldagi yetkazib beruvchi va raqobatchi. Obyekt xaritada rangli belgilanadi (Megaton — to’q sariq, Arton — ko’k, Ytong — sariq, BS — qizil). Qurilish bosqichi xarid vaqtini oldindan aniqlaydi: poydevorda aloqa o’rnatiladi, karkasda KP yuboriladi, devor bosqichida shartnoma va bron qilinadi.',
+   kim:'Sotuv menejeri — Hunter / Senior Farmer / Farmer (Regional Sales)',qachon:'Dala aylanishida yangi qurilish obyekti aniqlanganda',kirish:['GPS / to’liq manzil','Developer (buyurtmachi)','Bosh pudratchi','LPR + telefon','Umumiy ehtiyoj (m³)','Qurilish bosqichi','Kerakli o’lchamlar','Taxminiy xarid sanasi','Raqobatchi','Lead Source'],manba:'Dala kuzatuvi, usta/pudratchi tavsiyasi, xaritalar, insayd, developer aloqalari',natija:'To’liq obyekt pasporti + COS (Chance of Sale) avto-baho → PIPELINE va xarita',keyingi:'Tashrif (Visit Proof)',tizim:['Mobil ilova (offline)','GPS','Xarita (Maps)'],muammo:'585 obyektda LPR va telefon yetishmaydi — obyekt "ko’r", COS past. Forma 30 soniyadan uzun bo’lsa menejer to’ldirmaydi.'},
+  {t:'Tashrif — Visit Proof',st:'Kvalifikatsiya',
+   d:'Menejer Route-to-Revenue marshruti bo’yicha obyektga boradi va tashrifni tizimda qayd etadi. Tashrif kartasida: sana, boshlanish/tugash vaqti, GPS joylashuv va obyekt bilan mosligi, obyekt fotosuratlari, uchrashilgan shaxs, uchrashuv natijasi, aniqlangan ehtiyoj, raqobatchi ma’lumoti, keyingi qadam va keyingi aloqa sanasi. GPS, vaqt va foto menejer obyektga real borganini tasdiqlaydi va soxta tashrifning oldini oladi. Menejer joylashuvi faqat ish vaqtida kuzatiladi — maqsad nazorat emas, balki tashrifni tasdiqlash, hudud qamrovini tahlil qilish va marshrutni samarali rejalashtirish. Tashrifdan keyin tizim avtomatik Follow-up vazifasi yaratadi.',
+   kim:'Sotuv menejeri (Farmer)',qachon:'Marshrut bo’yicha obyektga borilganda',kirish:['GPS koordinata','Foto','Uchrashilgan shaxs','Uchrashuv natijasi','Aniqlangan ehtiyoj','Keyingi qadam + sana'],manba:'Obyektga real tashrif',natija:'Tashrif yozuvi + COS yangilanadi + avtomatik Follow-up vazifasi',keyingi:'Mijozni baholash',tizim:['Mobil ilova (offline sinxron)','GPS'],muammo:'GPS va fotosiz tashrif hisoblanmaydi — soxta tashrifning oldini olish uchun.'},
+  {t:'Mijozni baholash — toifa',st:'Kvalifikatsiya',
+   d:'Pasport to’lgach mijoz baholanadi va toifaga ajratiladi: Bazaviy, Standart, Partner (Hamkor), Strategik, Mister X. Baholash mezonlari: tasdiqlangan hajm, kim qaror qiladi (LPR), hozirgi material, nega Megaton, xarid ehtimoli. Faqat tasdiqlangan hajm hisobga olinadi — og’zaki va’dalar emas. Bitta obyektda odatda 3–5 ta kontakt bilan ishlanadi (direktor, ta’minot, prorab, usta, buxgalter) va faqat bittasiga bog’lanib qolish tavsiya etilmaydi. Har kontakt uchun ta’sir darajasi, aloqa tarixi va Megaton’ga munosabati yuritiladi. Developerning barcha obyektlari bitta kompaniya kartasiga bog’lanadi, shunda uzoq muddatli hamkorlik boshqariladi.',
+   kim:'Sotuv menejeri / KAM',qachon:'Obyekt pasporti to’lgach',kirish:['Tasdiqlangan hajm','LPR (kim qaror qiladi)','Hozirgi material','Nega Megaton','Xarid ehtimoli (%)'],manba:'Mijoz va LPR bilan suhbat',natija:'Toifa (Bazaviy/Standart/Hamkor/Strategik/Mister X), xarid ehtimoli %, Client Score',keyingi:'KP va texnik dalil',qoida:'Faqat tasdiqlangan hajm hisobga olinadi — og’zaki va’dalar emas.',ochiq:'Toifa narx tierlari (so’m/m³) hali tasdiqlanmagan.'},
+  {t:'KP va texnik dalil',st:'KP',
+   d:'Menejer toifa narxidan KP tayyorlaydi va texnik dalil bilan mustahkamlaydi: 1 m² devor tannarxi hisobi, mahsulot sifati va mustahkamligi, issiqlik samaradorligi, yetkazish tezligi, ishlab chiqarish barqarorligi. Megaton strategiyasi — narx emas, qiymat sotiladi: birinchi martadayoq boshqa zavod bera olmaydigan yechim taqdim etiladi (bosqichma-bosqich yetkazish, ishlab chiqarish hajmini bron qilish, texnik maslahat, sinov partiyasi, obyektga mutaxassis yuborish, rahbariyat darajasidagi uchrashuv). Raqobatchi bo’lsa (Arton/Ytong/BS) uning narxi, hajmi va sharti o’rganilib, raqobatbardosh taklif tayyorlanadi. Har suhbat keyingi harakat (next action) bilan yakunlanadi.',
+   kim:'Sotuv menejeri / Sales Support',qachon:'Ehtiyoj va toifa aniqlangач',kirish:['Obyekt hajmi (m³)','Toifa narxi (katalogdan)','Raqobatchi taklifi','Transport / yetkazish grafigi'],manba:'Narx katalogi + texnik hisob + raqobat tahlili',natija:'KP hujjati + 1 m² devor iqtisodi hisobi',keyingi:'Muzokara',qoida:'Narx emas — qiymat sotiladi. Har suhbat next action bilan tugaydi.'},
+  {t:'Muzokara',st:'Muzokara',
+   d:'KP yuborilgach LPR bilan narx, to’lov, hajm va yetkazish shartlari muhokama qilinadi. Kelishilsa — approval/shartnomaga; e’tiroz bo’lsa sabab qayd etiladi. Yo’qotilsa Lost (sabab majburiy), keyinga qolsa Frozen (muzlatilgan). Muzlatilgan obyekt o’chirilmaydi — alohida nazoratda saqlanadi: muzlatish sababi, qayta aloqa sanasi, joriy qurilish bosqichi va qayta tiklash ehtimoli yuritiladi; qayta aloqa sanasida tizim avtomatik vazifa beradi (7 kun / 30 kun / muddati o’tgan panellari). B2B’da yo’qotilgan mijoz bilan iliq munosabat saqlanadi, chunki qayta sotuv imkoniyati bor.',
+   kim:'Sotuv menejeri / KAM (strategik mijozlar)',qachon:'KP yuborilgach',kirish:['KP','Mijoz e’tirozlari','So’ralgan shart'],manba:'LPR bilan muzokara',natija:'Kelishuv shartlari yoki e’tiroz / yo’qotish sababi',keyingi:'Chegirma / narx tasdig’i',dec:{q:'Kelishildimi?',br:[{l:'Ha → approval / shartnoma',to:5},{l:'Yo’q → Lost (sabab majburiy)'},{l:'Keyinroq → Frozen'}]}},
+  {t:'Chegirma / narx tasdig’i',st:'Shartnoma',
+   d:'Menejer belgilangan toifa narxidan pastga tushmoqchi bo’lsa, chegirma tasdiqlanishi kerak. Deal Desk qoidasi: agar (standart narx − taklif narx) × hajm belgilangan chegaradan (masalan 5 mln so’m) oshsa — Direktor tasdig’iga chiqadi, aks holda to’g’ridan shartnomaga o’tadi. Marja va foyda hisobini Moliya bo’limi belgilaydi (chegara/floor narx, masalan 620 000 so’m/m³). Menejer narxni mustaqil ravishda limitdan past qo’ya olmaydi. Tizimda standart narx, menejer taklifi, yakuniy tasdiqlangan narx, chegirma sababi va tasdiqlagan rahbar saqlanadi.',
+   kim:'B2B bo’lim rahbari → (kerak bo’lsa) Savdo rahbari / Direktor',qachon:'Chegirma yoki limitdan past narx so’ralganda',kirish:['So’ralgan narx','Standart narx','Marja hisobi','Hajm (m³)'],manba:'Deal Desk qoidalari + Moliya belgilagan floor narx',natija:'Chegirma qarori yoki yuqoriga eskalatsiya',keyingi:'Shartnoma',appr:'Approval nuqtasi — chegirma / narx tasdig’i',dec:{q:'(Standart − taklif) × m³ > belgilangan limit?',br:[{l:'Ha → Direktor tasdig’i'},{l:'Yo’q → shartnomaga',to:6}]},ochiq:'Chegirma limiti / floor narx aniq raqami tasdiqlanishi kerak.'},
+  {t:'Shartnoma — Didox e-imzo',st:'Shartnoma',
+   d:'Shartlar tasdiqlangach shartnoma Didox orqali elektron imzolanadi. Ma’lumot modeli: bitta yuridik mijozda bir yoki bir nechta amaldagi shartnoma, bitta asosiy shartnoma ko’p obyekt va ko’p buyurtmani qamrashi mumkin, har buyurtma aniq obyekt va shartnomaga bog’lanadi. Alohida obyektda boshqa narx yoki shart bo’lsa qo’shimcha kelishuv yoki alohida shartnoma tuziladi. Hunter tijorat shartlarini tayyorlaydi, yurist matnni tekshiradi, B2B rahbari nostandart shartni tasdiqlaydi, vakolatli shaxs imzolaydi. Tizimda shartnoma raqami, bog’langan obyektlar, muddat, status, Didox statusi, imzolangan PDF va versiya tarixi saqlanadi.',
+   kim:'Shartnoma bo’limi / yurist (Hunter + B2B rahbari tasdig’i bilan)',qachon:'Shartlar tasdiqlangач',kirish:['Mijoz STIR','Summa, hajm (m³), muddat','To’lov sharti','Bog’langan obyekt(lar)'],manba:'Kelishilgan tijorat shartlari',natija:'Imzolangan shartnoma → reestr (versiya tarixi bilan)',keyingi:'Buyurtma → SAP rezerv',tizim:['Didox'],qoida:'Bir shartnoma → ko’p obyekt va ko’p buyurtma. Shablonni faqat yuridik bo’lim o’zgartiradi, versiyalar saqlanadi.'},
+  {t:'Buyurtma → SAP rezerv',st:'Tayyorgarlik',
+   d:'Shartnoma asosida buyurtma yaratiladi va SAP’da o’lcham × nav bo’yicha rezerv qilinadi. Ombor rezervi buyurtma yaratilishi bilan qilinadi, odatda 1–3 kun saqlanadi, to’lov yoki tasdiq bo’lmasa avtomatik bekor bo’ladi. Production Reservation (ishlab chiqarish broni) — hali sotilmagan, lekin kutilayotgan hajmni oldindan bron qilish: agar bitim ehtimoli 70%+ va xarid sanasi 14 kun ichida bo’lsa, tizim ishlab chiqarishga signal beradi. Bronni Farmer kiritadi, Hunter yoki rahbar tasdiqlaydi; strategik bronlar B2B rahbari ko’rigidan o’tadi. Rezerv bosqichlari: Forecast (1–2 oy) → Hot (14 kun) → SAP Real (to’lovdan keyin).',
+   kim:'Sales Operations / Ombor (SAP)',qachon:'Shartnomadan keyin',kirish:['Mijoz','O’lcham × nav','Hajm (m³)','Narx','Yetkazish sanasi'],manba:'Shartnoma',natija:'Buyurtma ERP’da + SAP rezerv (o’lcham × nav bo’yicha ATP)',keyingi:'To’lov nazorati',tizim:['SAP (ikki tomonlama)'],qoida:'Rezerv: Forecast (1–2 oy) → Hot (14 kun) → SAP Real (to’lovdan keyin). Production Reservation to’langan buyurtmadan ustun emas.',ochiq:'Order ID: SAP avtomatik vs platforma Sequence — hal qilinishi kerak.'},
+  {t:'To’lov nazorati — Payment Velocity',st:'Tayyorgarlik',
+   d:'B2B’da 100% oldindan to’lov qoidasi: mablag’ hisob raqamiga amalda tushib, bank tasdiqlagandan keyingina yuklash. To’lov topshiriqnomasi, skrinshot yoki og’zaki va’da to’lov hisoblanmaydi. Standart kredit limiti yo’q; faqat dam olish yoki bank ishlamaydigan kunlarda Hunter qarori bilan istisno yuklash mumkin (Hunter yuklashni rad etishi, limitni kamaytirishi yoki ruxsat berishi mumkin). To’lov kechiksa mijoz bloklanadi (Faol / To’lov kutilmoqda / Risk / Blokda statuslari). Payment Velocity: buyurtmadan to’lovgacha, invoysdan to’lovgacha, to’lovdan yuklashgacha kunlar va kechikish summasi hisoblanadi.',
+   kim:'Moliya / Sales Operations',qachon:'Buyurtmadan keyin',kirish:['Bank tushumi (STIR/INN)','Summa','Sana'],manba:'Bank (faqat o’qish) + TimePay',natija:'To’lov statusi (Faol / To’lov kutilmoqda / Risk / Blokda) + Payment Velocity',keyingi:'Yuklash va yetkazish',tizim:['Bank','TimePay'],dec:{q:'To’lov 100% keldimi?',br:[{l:'Ha → yuklash',to:9},{l:'Yo’q → Blok, yangi yuk to’xtaydi'}]},qoida:'100% oldindan to’lov. Bank ma’lumoti faqat o’qiladi. Istisno faqat Hunter qarori bilan.'},
+  {t:'Yuklash va yetkazish',st:'Yetkazish',
+   d:'To’lov tasdig’idan keyin logistika transportni biriktiradi va obyektga yetkazadi. Transport turi hajm va obyekt sharoitiga qarab tanlanadi: fura (katta hajm, obyektda yuk tushirish texnikasi bor) yoki manipulyator (kichik hajm, kran yo’q). Tizim hajmga qarab furalar/manipulyatorlar soni, paletlar va reyslarni hisoblashi kerak. Yirik obyektga mahsulot bosqichma-bosqich, tasdiqlangan yetkazish grafigi asosida yetkaziladi. Yetkazish GPS, foto, TTN va qabul qiluvchi imzosi bilan tasdiqlanadi; Delivery statuslari (Transport biriktirildi → Yuklandi → Zavoddan chiqdi → Yo’lda → Yetib bordi → Tushirildi → Qabul qilindi) va On-Time Delivery yuritiladi.',
+   kim:'Ombor · Logistika',qachon:'To’lov tasdig’idan keyin',kirish:['Buyurtma','Transport turi','Obyekt manzili + GPS','Yetkazish grafigi'],manba:'Yuklash grafigi + obyekt manzili',natija:'Obyektga yetkazish + qabul (GPS/foto/TTN) + On-Time',keyingi:'Sotuv yakuni',tizim:['SAP'],muammo:'Ilgari zavodni tark etgач kuzatuv yo’q edi — yetkazish tasdig’i (GPS/foto/TTN) kerak.'},
+  {t:'Sotuv yakuni — Won / Lost',st:'Won',
+   d:'Yetkazish va to’lovdan keyin bitim yopiladi. B2B’da deal closed odatda shartnoma tuzilib, ma’lum yuk uchun pul tushganda — shu mijoz ma’lum miqdor yuk olishi aniq bo’lganda hisoblanadi. Won bo’lsa: 90 kunlik keyingi reja tuziladi, Client Score 75+ mijozlarga Gift/imtiyoz; Lost bo’lsa: sabab tahlil qilinadi (Autopsy) va narx siyosati, mahsulot, logistika hamda menejer faoliyatini yaxshilashda foydalaniladi. Sikl yopilmaydi — yakunlangan mijoz qayta muzokaraga qaytadi, chunki bir obyektga bir necha bosqichda va bir developerga bir necha obyekt bo’yicha sotuv davom etadi. Menejer almashsa, barcha mijoz/obyekt/tarix Manager Handover orqali yangi menejerga o’tadi.',
+   kim:'Sales Operations · KAM · CRM',qachon:'Yetkazish + to’lovdan keyin',kirish:['Yuklash va to’lov ma’lumoti','Yakun natijasi'],manba:'Sotuv jurnali',natija:'Won → 90 kunlik reja + Gift (Score 75+); Lost → sabab tahlili (Autopsy)',keyingi:'Qayta sotuv / boshqaruv',qoida:'Sikl yopilmaydi — yakunlangan mijoz qayta muzokaraga qaytadi. Menejer almashsa Manager Handover ishlaydi.'},
+ ]},
+ b2c:{name:'B2C',tc:'#f5a623',title:'B2C — Lead va kanal asosida sotuv',steps:[
+  {t:'Lead kirishi',st:'New',
+   d:'B2C leadlari marketing kanallaridan Call Center orqali keladi: Instagram, Telegram, Facebook, veb-sayt, YouTube, reklama (banner/Damas), mahsulot qadog’i, tavsiya va zavodga tashrif. Zavodga bevosita kelganlardan tashqari barcha murojaat avval Call Center’ga tushadi — Call Center murojaatni qabul qiladi, AmoCRM’da lead yaratadi (Lead Source majburiy) va mijozni hududi/ehtiyojiga qarab tegishli kanalga yo’naltiradi (YT chakana, Hamkor do’kon yoki Madad diler). Digital platformalar alohida sotuv kanali emas — faqat Lead Generation manbalari. Hozirgi asosiy muammo: Lead→Sotuv konversiyasi ~5.7% (past), marketing leadlari qo’lda kiritiladi va tekshirilmaydi.',
+   kim:'Call Center',qachon:'Murojaat kelganда (onlayn yoki telefon)',kirish:['Ism','Telefon','Lead Source (Instagram/Telegram/sayt/YouTube/qadoq/reklama/tavsiya)','Ehtiyoj','Hudud'],manba:'Marketing kanallari → Call Center',natija:'AmoCRM’da yangi lead (Lead Source majburiy)',keyingi:'Birinchi konsultatsiya',tizim:['amoCRM'],muammo:'Lead→Sotuv konversiyasi ~5.7% — past. Marketing leadlari qo’lda kiritiladi va tekshirilmaydi.'},
+  {t:'Birinchi konsultatsiya',st:'New',
+   d:'Call Center mijoz bilan suhbatlashib ehtiyojini aniqlaydi: qanday loyiha (xonadon, ombor), qancha m³, qaysi o’lcham va nav, hudud, sotib olish vaqti, habardorligi. Narx katalogidan aniq narx va hajm hisoblab beriladi (B2C narxi qat’iy, chegirma yo’q). Tashqi devor uchun 400/300/250, ichki devor uchun 200 lik tavsiya qilinadi. Hozirgi muammo — sotuvga tayyor bo’lmagan leadlar ham menejerga o’tadi: 20 ta leaddan atigi 2–3 tasi sotuvga aylanadi, chunki lead sifati tekshirilmaydi.',
+   kim:'Call Center',qachon:'Lead yaratilgach',kirish:['Kerakli hajm (m³)','Hudud','O’lcham + nav','Sotib olish vaqti'],manba:'Mijoz bilan suhbat + narx katalogi',natija:'Ehtiyoji aniqlangan, malakalangan lead',keyingi:'Qayta aloqa / uchrashuv',tizim:['amoCRM'],muammo:'Sotuvga tayyor bo’lmagan leadlar ham menejerga ketadi — 20 tadan 2–3 tasi sotuvga aylanadi.'},
+  {t:'Qayta aloqa / uchrashuv',st:'Kvalifikatsiya',
+   d:'Belgilangan qayta aloqa sanasida menejer (Closer yoki Diller manager) mijoz bilan bog’lanadi. AmoCRM’da eslatma (Reminder) qo’yiladi — bu funksiya asosan B2C uchun ishlaydi. Natijaga qarab: muvaffaqiyatli bo’lsa buyurtmaga, muvaffaqiyatsiz bo’lsa sabab yoziladi (aniq belgilangan sabablar ro’yxatidan, erkin emas), keyinroq bo’lsa yangi sana va eslatma qo’yiladi. B2C statuslari: Yangi lead → Qayta aloqa → Muvaffaqiyatli / Muvaffaqiyatsiz. Hozirgi muammo — dilerga yoki do’konga yo’naltirilgan mijozning keyingi holatini kuzatish (Lead Accept mexanizmi) yo’q, Follow-up nazorati kuchsiz.',
+   kim:'B2C menejer (Closer / Diller manager)',qachon:'Belgilangan qayta aloqa sanasida',kirish:['Qayta aloqa ro’yxati','Suhbat natijasi'],manba:'amoCRM Reminder',natija:'Suhbat natijasi (Muvaffaqiyatli / Muvaffaqiyatsiz / Keyinroq)',keyingi:'Sotuv kanali',dec:{q:'Natija qanday?',br:[{l:'Muvaffaqiyatli → buyurtma',to:3},{l:'Muvaffaqiyatsiz → sabab (ro’yxatdan)'},{l:'Keyinroq → sana + eslatma'}]},muammo:'Lead qabul (Accept) mexanizmi yo’q; dilerga yo’naltirilgan lead taqdiri va Follow-up nazorati kuchsiz.'},
+  {t:'Sotuv kanali',st:'Kvalifikatsiya',
+   d:'Mijoz uchta kanaldan biriga yo’naltiriladi: YT (to’g’ridan chakana savdo, Namangan bo’yicha), Hamkor do’kon (Namangan tumanlaridagi qurilish mollari do’konlari) yoki Madad diler (Andijon va Farg’ona — bu hududlarda eksklyuziv, zavod to’g’ridan sotmaydi). Taqsimlash hudud va yuklamaga qarab: Andijon/Farg’ona mijozi Madad dilerga, Namangan mijozi yuklamaga qarab Closer yoki Diller managerga. Closer’da yuklama ko’p bo’lsa Diller manager leadni ikki xil yopadi: hamkor do’konga yo’naltirib yoki o’zi. Madad diler CRM’dan foydalanadi: reja 2000–4000 m³/oy (mavsumga qarab), depozit ~100 mln so’m, marja 30 000 so’m/m³. Hamkor do’kon: har tumanda bitta (6 oy eksklyuziv), fura miqdorida xarid, marja 30 000 so’m/m³, reja yo’q.',
+   kim:'YT (chakana) · Hamkor do’kon · Madad diler',qachon:'Mijoz yo’naltirilganда',kirish:['Kanal (YT / Hamkor do’kon / Madad diler)','Hudud','Hajm (m³)'],manba:'Hudud va yuklamaga ko’ra taqsimlash',natija:'Kanal buyurtmasi umumiy oqimga',keyingi:'Buyurtma rasmiylashtirish',qoida:'Andijon/Farg’ona — Madad diler eksklyuziv. Har tumanda bitta hamkor do’kon (6 oy). Marja 30 000 so’m/m³.',ochiq:'Diler omborlari (Andijon 3, Farg’ona 1) tizimga ulanmagan — qoldiq/rezerv ko’rinmaydi va yo’naltirilgan lead taqdiri kuzatilmaydi.'},
+  {t:'Buyurtma rasmiylashtirish',st:'Tayyorgarlik',
+   d:'Kelishuvdan so’ng buyurtma rasmiylashtiriladi va avtomatik ketma-ket (Sequence) Order ID oladi. Buyurtma kartasida: mijoz (F.I.Sh./tashkilot), mijoz turi, telefon, yetkazish manzili + GPS (Google/Yandex Maps), onlayn buyurtma uchun IP manzil, mahsulot nomi/o’lcham/nav (1-nav/2-nav/brak)/hajm m³, buyurtma va yetkazish sanasi, transport turi (fura/manipulyator/mijoz transporti), to’lov turi va Lead Source. Nav va transport turi majburiy. Brak tanlansa qo’shimcha: brak turi, sababi, tasdiqlovchi foto, narx, chegirma. 1-nav/2-nav m³ da, brak tonna da hisoblanadi — tonna↔m³ konvertatsiya kerak. Brak narxi ~400 000 so’m/tonna, asosan xodimlar va zavodga kelgan mijozlarga.',
+   kim:'B2C menejer',qachon:'Kelishuvdan keyin',kirish:['O’lcham','Nav (1/2/brak)','Hajm (m³)','Transport turi','Manzil + GPS','To’lov turi','Lead Source'],manba:'Narx katalogi',natija:'Buyurtma 1C/SAP’ga (avtomatik Order ID)',keyingi:'To’lov va paddon nazorati',tizim:['1C / SAP','Google/Yandex Maps'],qoida:'Nav va transport turi — majburiy. Brak uchun: tur + sabab + foto. 1/2-nav — m³, brak — tonna (konvertatsiya kerak).'},
+  {t:'To’lov va paddon nazorati',st:'Tayyorgarlik',
+   d:'To’lov turlari va ulushlari: naqd ~52%, bank ~48%, plastik, onlayn (Click/Payme). B2C’da yuk yetib borganda kassa cheki bilan to’liq to’lov ham bo’ladi. Do’kondan yig’ilgan naqd pul zavod transporti bilan 24 soat ichida markaziy kassaga topshiriladi (qabul-topshirish hujjati, 2 nusxa); kassir summani buyurtma va hujjatlar bilan solishtiradi. Javobgarlik: pul haydovchida, kassir qabul qilgach — kassirda. Paddon (taglik) depoziti ~165 000 so’m/dona olinadi va 30 kun ichida qaytarilishi majburiy. Hozirgi muammo — paddon nazorati va naqd pul javobgarlik zanjiri qo’lda, yo’qotish bor; yangi tizimda Driver App orqali raqamlashtirilishi kerak.',
+   kim:'Kassir / Haydovchi (Driver App)',qachon:'Yuk chiqishidan oldin / yetkazishda',kirish:['To’lov turi (naqd 52% / bank 48% / Payme / Click)','Summa','Paddon depoziti (~165 000 so’m/dona)','Paddon qaytarish muddati (30 kun)'],manba:'Kassa / bank / haydovchi (Driver App)',natija:'To’lov tasdig’i + paddon qaytarish majburiyati',keyingi:'Yetkazish nazorati',tizim:['Bank','Driver App'],muammo:'Paddon nazorati va naqd pul javobgarlik zanjiri qo’lda — yo’qotish bor, Driver App orqali raqamlashtirilishi kerak.'},
+  {t:'Yetkazish nazorati — On-Time',st:'Yetkazish',
+   d:'Yuk yo’lda ekan, Customer Support va logistika holatni kuzatadi. Hozir real-time kuzatuv yo’q — Excel (Sheet) va logistika bilan telefon orqali. Yetkazishda mahsulotning 5% gacha zarari me’yoriy hisoblanadi; undan ortig’i reklamatsiya sifatida rasmiylashtiriladi va kompensatsiya qilinadi (yaxshi mijoz 5% dan kam zararga kompensatsiya talab qilmaydi). Yangi tizimda buyurtma statuslari (Qabul qilindi → To’lov tasdiqlandi → Yuklash rejalashtirildi → Yuklandi → Yo’lda → Yetib bordi → Yakunlandi), GPS xarita, OTD avtomatik hisobi va kechikish sababi (transport nosozligi, tirbandlik, ob-havo, ishlab chiqarish/ombor kechikishi va h.k.) bo’lishi kerak.',
+   kim:'Customer Support · Logistika',qachon:'Yuk yo’lda',kirish:['Yuk holati','Rejalashtirilgan va haqiqiy vaqt'],manba:'Logistika + GPS (hozir Excel + telefon)',natija:'On-Time (OTD) statistika; 5% gacha zarar me’yoriy, undan ko’p → reklamatsiya',keyingi:'Kunlik hisobot / KPI',muammo:'Hozir real-time kuzatuv yo’q — Excel + telefon orqali; OTD avtomatik hisoblanmaydi.'},
+  {t:'Kunlik hisobot / KPI',st:'Won',
+   d:'Kun oxirida menejer kunlik sotuvni yozadi: kanal, hudud, transport, nav, m³, tushum. Bu ma’lumot KPI, tahlil va forecast uchun asos bo’ladi. B2C bo’limi odatda oylik rejani ortig’i bilan bajaradi (bajarmaslik qabul qilinmaydi), chunki B2B va Export’da sotilmagan 2-nav va brak mahsulot ham B2C orqali realizatsiya qilinadi (ishlab chiqarishning ~15%, ~6000 m³ B2C uchun ajratiladi). Menejer KPI: reja bajarilishi, konversiya, to’lov intizomi, reklamatsiya darajasi. Hozir kanal (YT/Hamkor/Madad) bo’yicha aniq m³ va marja statistikasi yo’q — yangi tizim avtomatik hisoblashi kerak.',
+   kim:'B2C menejer',qachon:'Kun oxirida',kirish:['Kanal','Hudud','Transport','Nav','Hajm (m³)','Tushum'],manba:'Kun sotuvlari',natija:'Kunlik yozuv → KPI, tahlil, forecast',keyingi:'Reklamatsiya (bo’lsa) / Support',qoida:'Menejer KPI: reja, konversiya, to’lov intizomi, reklamatsiya. Reja bajarilmasligi qabul qilinmaydi.'},
+  {t:'Reklamatsiya',st:'Muzokara',
+   d:'Mijoz shikoyat qilsa yoki mahsulot nuqsonli bo’lsa reklamatsiya ochiladi. Foto/video, partiya (batch) raqami, zarar hajmi yig’iladi. Sifat nazorati 2 ish kunida ichki ma’lumotlarni tekshiradi, zarurat bo’lsa mutaxassis obyektga boradi. Mijoz haq bo’lsa yechim: to’liq/qisman almashtirish (Replacement Order), to’lov qilinmagan bo’lsa zarar summasi hisobidan chegirma, yoki keyingi buyurtmaga kompensatsiya. Zararni Savdo bo’lim rahbari, kompensatsiyani Direktor tasdiqlaydi. Zavod aybi (ishlab chiqarish nuqsoni yoki yetkazish jarayonida) bo’lsa qayta yetkazish va logistika xarajati zavod zimmasida; mijoz noto’g’ri saqlagan bo’lsa alohida ko’riladi. Gos-sertifikat mahsulot kafolati hisoblanadi.',
+   kim:'Sotuv menejer → Sifat nazorati → bo’lim rahbari',qachon:'Shikoyat kelganда',kirish:['Foto / video','Partiya (batch) raqami','Zarar hajmi','Mahsulot o’lchami / nav'],manba:'Mijoz murojaati',natija:'Almashtirish (Replacement Order) / chegirma / pul qaytarish / rad',keyingi:'Support va Loyalty',qoida:'Zavod aybi bo’lsa logistika xarajati zavod zimmasida. Zararni Savdo rahbari, kompensatsiyani Direktor tasdiqlaydi.'},
+  {t:'Support va Loyalty — qayta xarid',st:'Won',
+   d:'Sotuvdan keyin B2C’da marketing maqsadida aloqa saqlanishi mumkin. Maqsad — qayta xarid: qoniqqan mijoz yangi lead sifatida qaytadi. Perspektiv mijozlar — ayniqsa ustalar, chunki ular qayta sotuvni ko’p amalga oshiradi; ularni tarixdagi loyihalari, sifati, brigadalari soni va bandligi bo’yicha aniqlanadi. Sodiqlik dasturi hozir yo’q — yangi tizimda ishlab chiqiladi. Sikl yopilmaydi — qayta xaridor yangi mijoz jalb qilishdan ~5 barobar arzon.',
+   kim:'Customer Support · Loyalty · Promotions',qachon:'Sotuvdan keyin',kirish:['Mijoz fikri','Qayta xarid ehtimoli'],manba:'Sotuvdan keyingi aloqa',natija:'Qayta xarid → yangi lead',keyingi:'Sikl boshiga',qoida:'Sodiqlik dasturi hozir yo’q — ishlab chiqiladi. Qayta xaridor yangidan ~5x arzon.'},
+ ]},
+ b2g:{name:'B2G',tc:'#16a34a',title:'B2G — Davlat / new.cooperation.uz',steps:[
+  {t:'Xarid so’rovi monitoring',st:'Tender',
+   d:'Megaton B2G bo’limi davlat tenderlarida bevosita qatnashmaydi — yirik qurilish tenderlarida pudrat kompaniyasi g’olib bo’ladi, keyin material xaridi amalda B2B ga aylanadi. Shuning uchun B2G faoliyati new.cooperation.uz elektron savdo platformasi orqali xarid so’rovlarini topish, tahlil qilish va taklif berishga qaratilgan. Mas’ul xodim platformani har kuni monitoring qiladi: buyurtmachi, mahsulot, hajm, narx, deadline. B2G CRM’da alohida modul sifatida yuritiladi (xarid so’rovlari, pipeline, statuslar, shartnomalar, KPI). Kunlik monitoring — o’tkazib yuborilgan kun o’tkazib yuborilgan so’rov degani.',
+   kim:'B2G savdo menejeri / mas’ul xodim',qachon:'Har kuni (kunlik monitoring)',kirish:['Buyurtmachi','Mahsulot','Hajm (m³)','Narx','Deadline'],manba:'new.cooperation.uz platformasi',natija:'Nomzod xarid so’rovlari ro’yxati',keyingi:'Mos so’rovni tanlash',tizim:['new.cooperation.uz'],qoida:'Kunlik monitoring — o’tkazib yuborilgan kun = o’tkazib yuborilgan so’rov.'},
+  {t:'Mos so’rovni tanlash',st:'Tender',
+   d:'B2G bo’lim rahbari e’lon qilingan so’rovlarni tahlil qiladi va kompaniya imkoniyatiga mos so’rovlarni tanlaydi, mas’ul xodimlarga taqsimlaydi. Yirik yoki strategik xaridlar bo’yicha yakuniy qaror rahbariyat bilan kelishiladi. Mezonlar: hajm, hudud, narx, mahsulot mosligi. Mos bo’lsa tayyorgarlikka o’tiladi, mos bo’lmasa sabab yozib o’tkaziladi.',
+   kim:'B2G bo’lim rahbari',qachon:'So’rov e’lon qilinganda',kirish:['Hajm','Hudud','Narx','Mahsulot mosligi'],manba:'So’rov detallari (platforma)',natija:'Qaror: qatnashamiz / o’tkazamiz',keyingi:'Compliance va garov',dec:{q:'So’rov bizga mosmi?',br:[{l:'Ha → tayyorgarlik',to:2},{l:'Yo’q → sabab yozib o’tkazamiz'}]}},
+  {t:'Compliance va garov',st:'Tender',
+   d:'Platformada savdo qilish uchun "Mahalliy ishlab chiqaruvchi" sertifikati kerak (bir marta olinadi, 2 yil amal qiladi) va mahsulot uchun Muvofiqlik sertifikati (mahsulotni platformaga joylashtirish uchun asos, xaridor talab qilsa taqdim etiladi). Har shartnoma bo’yicha summaning 1% miqdorida garov (zalog) talab qilinadi: kompaniya platformadagi shaxsiy hisobiga oldindan 1–2 mln so’m zaxira qo’yadi, platforma har shartnoma uchun 1% ni avtomatik bloklaydi; mablag’ majburiyatlar to’liq bajarilguncha bloklangan turadi. Tizim garov qoldig’i, bloklangan va erkin summa hamda sertifikat muddatini yuritishi, sertifikat tugashidan oldin eslatma berishi kerak.',
+   kim:'B2G mas’uli',qachon:'Qatnashish qaroridan keyin',kirish:['"Mahalliy ishlab chiqaruvchi" sertifikati (2 yil)','Muvofiqlik sertifikati','1% garov (zalog)'],manba:'Sertifikatlar reestri + platforma depoziti',natija:'Tayyor hujjatlar + bloklangan 1% garov',keyingi:'Narx taklifi',tizim:['new.cooperation.uz'],qoida:'Sertifikat muddati tugashidan oldin avtomatik eslatma. 1% garov har shartnomada bloklanadi.'},
+  {t:'Narx taklifi',st:'Tender',
+   d:'Narx taklifi B2G bo’limi tomonidan bozordagi raqobatchi narxlari va joriy bozor sharoiti tahlili asosida tayyorlanadi. Yakuniy narx, minimal sotuv narxi va ruxsat etilgan chegirma limiti bo’yicha qaror Savdo bo’lim rahbari tomonidan qabul qilinadi va tasdiqlanadi. Tasdiqlangan narx taklifi platformaga yuboriladi.',
+   kim:'B2G bo’limi → Savdo bo’lim rahbari tasdiqlaydi',qachon:'Compliance o’tgач',kirish:['Tannarx','Marja','Raqobatchi narxi','Minimal narx / chegirma limiti'],manba:'Narx katalogi + bozor tahlili',natija:'Tasdiqlangan narx taklifi',keyingi:'Taklif yuborish',appr:'Savdo bo’lim rahbari tasdig’i (minimal narx va chegirma limiti)'},
+  {t:'Taklif yuborish va natija',st:'Tender',
+   d:'Tasdiqlangan narx taklifi deadline’gача platformaga yuboriladi. Xaridor bilan narx va shartlar bo’yicha kelishuvga erishilsa — yutildi (shartnomaga), erishilmasa — yutqazildi (rad sababi majburiy: narx yuqori, sifat, muddat, texnik talab, raqobatchi taklifi afzal). Rad sabablari standart ro’yxatdan qayd etilib, narx siyosatini takomillashtirishda foydalaniladi. Hozir B2G bo’yicha yagona reyestr va statistika yo’q.',
+   kim:'B2G mas’uli',qachon:'Deadline’gача',kirish:['Tasdiqlangan narx taklifi'],manba:'new.cooperation.uz platformasi',natija:'Yutildi → shartnoma / Yutqazildi → rad sababi (ro’yxatdan)',keyingi:'Shartnoma va rezerv',dec:{q:'Natija qanday?',br:[{l:'Yutdik → shartnoma',to:5},{l:'Yutqazdik → rad sababi'}]},ochiq:'B2G KPI ko’rsatkichlari (yutilgan so’rovlar soni, hajm, marja, to’lov tushumi) hali aniqlanmagan.'},
+  {t:'Shartnoma va rezerv',st:'Shartnoma',
+   d:'Kelishuv tasdiqlangач shartnoma new.cooperation.uz platformasida 48 soat ichida avtomatik shakllanadi. Shartnoma rasmiylashgach xaridordan didox.uz orqali ishonchnoma (doverennost) olinadi. Shartnoma tuzilishi bilan mahsulot omborda avtomatik bron qilinadi, bu boshqa mijozga sotilishining oldini oladi.',
+   kim:'B2G mas’uli · Ombor',qachon:'Kelishuvdan keyin',kirish:['Kelishuv','Mahsulot / hajm'],manba:'Platforma (48 soatda avtomatik shartnoma)',natija:'Shartnoma + omborda avtomatik bron + didox ishonchnoma',keyingi:'Yetkazish va hujjat',tizim:['new.cooperation.uz','Didox'],qoida:'Shartnoma 48 soat ichida avtomatik shakllanadi. Tuzilishi bilan ombor broni.'},
+  {t:'Yetkazish va hujjat',st:'Yetkazish',
+   d:'Mahsulot korxona logistika xizmati tomonidan yetkaziladi (yetkazish narxga kiritilgan, minimal xarid — kamida 1 manipulyator hajmi). Qabul xaridorning ta’minot bo’limi vakili va korxona logistikasi tomonidan tasdiqlanadi. Xaridordan didox.uz orqali ishonchnoma olinadi va schyot-faktura rasmiylashtiriladi; xaridor schyot-fakturani platformaga yuklaydi va tasdiqlaydi. To’lovsiz yuk faqat Savdo bo’lim rahbari va Direktor ruxsati bilan chiqadi.',
+   kim:'Logistika · B2G mas’uli',qachon:'To’lov / shartnoma bo’yicha',kirish:['Ishonchnoma (didox)','Schyot-faktura','Mahsulot / hajm'],manba:'Xaridor ta’minot bo’limi + korxona logistikasi',natija:'Yetkazildi + schyot-faktura platformaga yuklandi',keyingi:'To’lov va yakun',tizim:['Didox','new.cooperation.uz'],qoida:'To’lovsiz yuk faqat Savdo rahbari + Direktor ruxsati bilan. Minimal xarid — 1 manipulyator hajmi.'},
+  {t:'To’lov va yakun',st:'Won',
+   d:'To’lov platforma orqali boshqariladi: xaridor to’lovni new.cooperation.uz hisobiga 10 bank ish kuni ichida amalga oshiradi. To’lov tasdiqlangач mahsulot yuklanadi/yetkaziladi, yetkazish yakunlangач platforma mablag’ni sotuvchi hisobiga o’tkazadi — ya’ni to’lovni o’tkazish majburiyati platforma zimmasida. So’rov yopiladi, shartnoma statusi (Tuzilgan → Bajarilayotgan → Bajarilgan) yuritiladi. Bir marta hamkorlik qilgan pudrat kompaniyasi keyingi loyihalarida ham qaytishi mumkin — "Pudrat/Qurilish kompaniyalari" toifasida hamkorlik tarixi saqlanadi.',
+   kim:'Moliya · B2G mas’uli',qachon:'Yetkazishdan keyin',kirish:['Platforma to’lovi','Schyot-faktura'],manba:'new.cooperation.uz (10 bank ish kuni)',natija:'To’lov sotuvchi hisobiga o’tkaziladi; so’rov yopiladi',keyingi:'Doimiy hamkorlik / yangi so’rov',tizim:['new.cooperation.uz'],qoida:'To’lov platforma orqali — mablag’ni sotuvchiga platforma o’tkazadi.',ochiq:'B2G reklamatsiya jarayoni hali aniqlanmagan (qo’shimcha biznes-tahlil kerak).'},
+ ]},
+ export:{name:'Export',tc:'#8b5cf6',title:'Export — Kontrakt → Chegara (FCA)',steps:[
+  {t:'Bozor va mijoz qidirish',st:'Export',
+   d:'Hozir eksport faqat Qirg’izistonga amalga oshiriladi (keyingi bosqichda Tojikiston rejalashtirilgan). Faqat 1-nav mahsulot eksport qilinadi; o’rtacha hajm ~14 000 m³ — umumiy ishlab chiqarishning ~35–40%. Mijozlar bozor tadqiqoti va xizmat safarlari, CRM eksport leadlari, mavjud mijoz tavsiyasi (Word of Mouth) hamda zavodga tashrif orqali topiladi. 5–6 asosiy mijoz bor, lekin 1 ta yirik "akula" mijoz asosiy hajmni bajaradi. Mijozning ishonchliligi alohida tekshirilmaydi, chunki 100% oldindan to’lov himoya qiladi. Distribyutorga maxsus shartlar Director tasdig’i bilan; bir martalik mijozga oddiy taklif beriladi.',
+   kim:'International Sales / Regional Export Managers',qachon:'Bozor tadqiqoti va so’rov kelganda',kirish:['Davlat / shahar','Ehtiyoj (m³)','Mijoz turi (distribyutor / bir martalik)','Lead Source'],manba:'Bozor tadqiqoti, tavsiya (WoM), CRM lead, zavod tashrifi',natija:'Nomzod mijozlar ro’yxati',keyingi:'Muzokara va proforma',dec:{q:'Mijoz turi?',br:[{l:'Distribyutor → maxsus shartlar (Director approval)'},{l:'Bir martalik → oddiy taklif',to:1}]},qoida:'Faqat 1-nav eksport qilinadi. Ishonchlilik alohida tekshirilmaydi — 100% oldindan to’lov himoya qiladi.'},
+  {t:'Muzokara va proforma',st:'Muzokara',
+   d:'Aloqadan so’ng narx va shartlar muhokama qilinadi va Proforma Invoice (USD’da) tayyorlanadi. Narx AQSh dollarida beriladi; kurs va tannarx riskini qoplash uchun narxga odatda 2–3% xavfsizlik marjasi qo’shiladi. Minimal sotuv hajmi va chegirma limiti belgilangan. Incoterms — FCA. Yakuniy narx va chegirma Savdo bo’lim rahbari tomonidan tasdiqlanadi. Mijozlar bilan asosan o’zbek va rus tillarida muloqot qilinadi.',
+   kim:'International Sales · Pricing',qachon:'Aloqadan keyin',kirish:['Hajm (m³)','Manzil','USD narx','Incoterms (FCA)','Chegirma (limit ichida)'],manba:'Narx katalogi (USD) + 2–3% xavfsizlik marjasi',natija:'Proforma Invoice (USD) → mijozga',keyingi:'100% oldindan to’lov',qoida:'Narx USD’da + 2–3% xavfsizlik marjasi. Minimal hajm va chegirma limiti bor.',ochiq:'Export narx/chegirma limiti + approver (Savdo rahbari yoki Export rahbari?) — hal qilinishi kerak.'},
+  {t:'100% oldindan to’lov',st:'Tayyorgarlik',
+   d:'Barcha eksport shartnomalari 100% oldindan to’lov asosida: mahsulot faqat to’lov to’liq qabul qilingandan keyin yuklanadi. Mijoz to’lovni amalga oshiradi, to’lovni tasdiqlovchi hujjat (bank kvitansiyasi) taqdim etiladi, to’lov Turon Bank tomonidan tasdiqlanadi, valyuta tushumi va eksport nazorati E-Contract tizimi orqali yuritiladi. To’lov to’liq kelmasa yuk chiqmaydi. Bu mexanizm to’lov undirish riskini va debitor qarzdorlikni yo’q qiladi.',
+   kim:'Buxgalteriya',qachon:'Proformadan keyin',kirish:['To’lovni tasdiqlovchi hujjat (kvitansiya)','Summa (USD)'],manba:'Turon Bank tasdig’i + E-Contract nazorati',natija:'To’lov tasdiqlandi → yuklashga ruxsat',keyingi:'Shartnoma va buyurtma',tizim:['Turon Bank','E-Contract'],dec:{q:'To’lov to’liq keldimi?',br:[{l:'Ha → shartnoma + buyurtma',to:3},{l:'Yo’q → yuk chiqmaydi'}]},qoida:'Mahsulot faqat 100% to’lovdan keyin yuklanadi.'},
+  {t:'Shartnoma va buyurtma',st:'Shartnoma',
+   d:'To’lov tasdig’idan keyin eksport shartnomasi rasmiylashtiriladi. Shartnomani kompaniyaning yuridik hamkori (yuridik firma) tayyorlaydi va huquqiy ekspertizadan o’tkazadi; Econtract Online orqali rasmiylashtiriladi. Har qanday o’zgartirish faqat yuristlar ko’rigidan va tasdig’idan keyin amal qiladi. Valyuta nazorati va repatriatsiya muddati kuzatiladi. Shartnoma asosida buyurtma tizimga kiritiladi.',
+   kim:'Yuridik firma · Export mas’uli',qachon:'To’lov tasdig’idan keyin',kirish:['Valyuta, summa (USD)','Incoterms (FCA)','Muddat','Repatriatsiya muddati'],manba:'Econtract Online (yurist ko’radi)',natija:'Ro’yxatdan o’tgan kontrakt + buyurtma tizimga',keyingi:'Hujjat paketi',tizim:['Econtract'],qoida:'O’zgartirish faqat yuristlar orqali. Repatriatsiya muddati nazorat qilinadi.'},
+  {t:'Hujjat paketi',st:'Tayyorgarlik',
+   d:'Buyurtmadan so’ng to’liq eksport hujjat paketi tayyorlanadi: Invoice + Packing List (birga, export bo’limi shablonidan), CMR (xalqaro yuk xati), CT-1 (kelib chiqish sertifikati), Mahsulot sifat pasporti (Quality Passport). CT-1 eng ko’p vaqt oladigan qo’l bosqichi: Davlat Ekspertiza portali orqali ariza beriladi, keyin Ekspertiza idorasiga borib imzo va muhr bilan tasdiqlanadi (onlayn nusxada muhr bo’lmagani uchun boshqa davlatda qabul qilinmaydi). Har davlat uchun sertifikat/standart talablari farq qiladi (Qirg’iziston — EAEU reglamentlari). Yangi tizim Invoice+Packing List, CMR va sifat pasportini shartnoma/mijoz/mahsulot ma’lumotidan avtomatik (Excel/PDF) generatsiya qilishi kerak.',
+   kim:'Export operatsion xodim',qachon:'Buyurtmadan keyin',kirish:['Invoice + Packing List','CMR','CT-1 (kelib chiqish)','Sifat pasporti (Quality Passport)'],manba:'Shablon + Davlat Ekspertiza portali (CT-1)',natija:'To’liq eksport hujjat paketi (avto-generatsiya tavsiya etiladi)',keyingi:'Bojxona rasmiylashtiruvi',tizim:['Ekspertiza portali'],ochiq:'CT-1 rasmiylashtirish — eng ko’p vaqt oladigan qo’l bosqichi (Ekspertizaga borib imzo/muhr). Hujjatlarni avtomatlashtirish kerak.'},
+  {t:'Bojxona rasmiylashtiruvi',st:'Tayyorgarlik',
+   d:'Hujjat paketi tayyor bo’lgач bojxona deklaratsiyasi (GTD) rasmiylashtiriladi. Bu bojxona portali orqali amalga oshiriladi va deklarant tomonidan taqdim etiladi. Eksport bo’yicha bojxona hujjatlari korxonaning Export operatsion xodimi va bojxona deklaranti hamkorligida tayyorlanadi. Ular hujjatlarning to’g’ri va o’z vaqtida rasmiylashtirilishi uchun mas’ul.',
+   kim:'Export operatsion xodim + bojxona deklaranti',qachon:'Hujjat paketi tayyor bo’lgач',kirish:['Hujjat paketi','GTD (bojxona deklaratsiyasi)'],manba:'Bojxona portali',natija:'Bojxona ruxsati',keyingi:'FCA topshirish',tizim:['Bojxona portali']},
+  {t:'FCA topshirish',st:'Yetkazish',
+   d:'Bojxona ruxsatidan keyin mahsulot kelishilgan FCA nuqtasida xaridor yoki uning tashuvchisiga topshiriladi va CMR imzolanadi. FCA (Free Carrier) shartiga ko’ra topshirish nuqtasidan keyin transport, xalqaro logistika, sug’urta va yo’l xatari to’liq xaridor zimmasiga o’tadi — korxona yukni keyin kuzatmaydi. Yetkazish muddati: 100% to’lov kunidan boshlab 30 kun ichida FCA topshirish. Aniq standart muddat buyurtma hajmi va ishlab chiqarish rejasiga bog’liq.',
+   kim:'Logistika · Regional Export Manager',qachon:'Bojxona ruxsatidan keyin (to’lovdan 30 kun ichida)',kirish:['Tayyor hujjat + yuk','FCA topshirish nuqtasi','CMR'],manba:'Kelishilgan FCA nuqtasi',natija:'Yuk xaridor tashuvchisiga topshiriladi + CMR imzo; buyurtma "Topshirildi"',keyingi:'Deal closed',qoida:'FCA’dan keyin risk va logistika — xaridor zimmasida. To’lovdan 30 kun ichida topshirish.'},
+  {t:'Deal closed va reklamatsiya',st:'Won',
+   d:'Bojxona deklaratsiyasi shakllangач bitim yopiladi (deal closed odatda 1–2 kun). Eksportda deal closed uchun to’lov, hujjat va FCA topshirish yetarli — keyingi logistika mijoz mas’uliyatida. Eksport bitimlari va valyuta tushumi MB, SAP va E-Contract orqali hisobga olinadi. Reklamatsiya: shikoyat kelsa 3 ish kunida Sifat nazorati ko’radi, shartnomaning 5-bandi asosida hal qilinadi — FCA’da ishlab chiqarish nuqsoni bo’lsa Megaton, transport shikasti bo’lsa xaridor javob beradi. Export KPI hali joriy etilmagan (kelgusida: eksport hajmi, valyuta tushumi, yangi bozor, marja, o’z vaqtida bajarish).',
+   kim:'Export mas’uli · Sifat nazorati',qachon:'Deklaratsiya shakllangач',kirish:['Bojxona deklaratsiyasi','Valyuta tushumi hisoboti'],manba:'Bojxona + MB / SAP / E-Contract',natija:'Deal closed (1–2 kun). Reklamatsiya: 3 ish kunida Sifat nazorati (shartnoma 5-bandi)',keyingi:'Qayta buyurtma',tizim:['SAP','E-Contract'],qoida:'FCA’da: ishlab chiqarish nuqsoni → Megaton; transport shikasti → xaridor.',ochiq:'Export KPI hali joriy etilmagan.'},
+ ]},
+};
+const DATAEXT={
+ umumiy:[
+  {opt:['Qo’shimcha izoh','Mijozning afzal aloqa kanali'],int:['AmoCRM lead ID (avto)','Lead Source (avto)','Yaratilgan sana (avto)']},
+  {sha:['STIR (yuridik shaxs uchun)','LPR / lavozim (yuridik uchun)'],opt:['Email','Qo’shimcha telefon','Faoliyat turi'],int:['Yagona CL-ID (avto)','Mijoz tarixi (avto)','Dublikat tekshiruvi (avto)']},
+  {opt:['Loyiha turi','Byudjet','Maxsus texnik talab'],int:['1 m² devor iqtisodi (avto hisob)']},
+  {sha:['Valyuta (Export uchun)'],opt:['Taklif amal muddati','Yuborish kanali (Email/Telegram/bosma)'],int:['Katalog narxi (avto)','KP raqami (avto)']},
+  {sha:['Yo’qotish sababi (Lost bo’lsa)','Frozen sababi + qayta aloqa sanasi (Frozen bo’lsa)'],opt:['Muzokara izohi'],int:['Aloqa tarixi (avto)']},
+  {opt:['Qo’shimcha kelishuv','Maxsus shart'],int:['Shartnoma raqami (avto)','Didox/Econtract imzo statusi','Imzolangan PDF','Versiya tarixi']},
+  {opt:['Yetkazish grafigi izohi'],int:['Order ID (avto)','Erkin qoldiq / ATP (avto)','Rezerv holati (Forecast/Hot/Real)']},
+  {opt:['Muqobil o’lcham/nav taklifi'],int:['Taxminiy tayyor sanasi (avto)','Ombor qoldig’i (avto)','Avto-zakaz signali']},
+  {sha:['Manipulyator qo’shimcha to’lovi (manipulyator bo’lsa)'],opt:['Chala reys xarajati izohi'],int:['Transport turi (avto)','Furalar/manipulyatorlar soni (avto)','Delivery statusi (avto)']},
+  {opt:['Qabul qiluvchi izohi','Video (kerak bo’lsa)'],int:['GPS yetib kelish (avto)','On-Time (OTD) hisobi (avto)','TTN/CMR','Qabul tasdig’i']},
+  {opt:['To’lov izohi'],int:['To’lov statusi (avto)','Summa/sana (avto)','Payment Velocity (avto)']},
+  {opt:['Sodiqlik izohi','Reklamatsiya (bo’lsa)'],int:['Qayta xarid ehtimoli (avto)','Mijoz tarixi (avto)']},
+  {int:['Kunlik/oylik hisobot (avto)','Konversiya (avto)','KPI/bonus hisobi (avto)','Forecast (avto)']}
+ ],
+ b2b:[
+  {sha:['Pudratchi (developer ≠ quruvchi bo’lsa)','Subpudratchi','Loyiha muhandisi / arxitektor','Buxgalter (to’lov boshlanganda)','Mahsulot o’lchami (ehtiyoj aniqlanganda)'],opt:['Qo’shimcha kontaktlar','Umumiy izohlar','Fayllar / hujjatlar','Qo’shimcha fotolar','Qavatlar soni / umumiy maydon'],int:['Obyekt ID (avto)','COS avto-baho','Xaritada joylashuv (avto)']},
+  {sha:['Raqobatchi ma’lumoti (obyektda raqobatchi bo’lsa)'],opt:['Video','Tashrif izohi'],int:['GPS mosligi (avto)','COS yangilanishi (avto)','Follow-up vazifasi (avto)']},
+  {opt:['Perspektiv baho izohi','Kontaktlar ta’sir darajasi'],int:['Toifa (avto)','Client Score (avto)','Xarid ehtimoli % (avto)']},
+  {sha:['Raqobatchi taqqoslash (raqobatchi bo’lsa)'],opt:['Sinov partiyasi taklifi','Yetkazish grafigi'],int:['KP raqami (avto)','1 m² hisob (avto)']},
+  {sha:['Lost sababi (Lost bo’lsa)','Frozen sababi + qayta aloqa (Frozen bo’lsa)'],opt:['Muzokara izohi'],int:['Aloqa tarixi (avto)','Bitim ehtimoli % (avto)']},
+  {sha:['Direktor tasdig’i (limitdan oshsa)'],opt:['Chegirma sababi'],int:['Standart vs taklif narx (avto)','Marja yo’qotishi (avto)','Approval statusi (avto)']},
+  {opt:['Qo’shimcha kelishuv','Bog’langan obyektlar'],int:['Shartnoma raqami (avto)','Didox imzo statusi','Imzolangan PDF','Versiya tarixi']},
+  {sha:['Production Reservation (ehtimol 70%+ va 14 kun bo’lsa)'],opt:['Yetkazish grafigi'],int:['Order ID (avto)','ATP qoldiq (avto)','Rezerv: Forecast/Hot/Real (avto)']},
+  {sha:['Istisno yuklash ruxsati (Hunter, bank yopiq kunlarda)'],opt:['To’lov izohi'],int:['To’lov statusi (avto)','Payment Velocity (avto)','Kechikish signali (avto)']},
+  {sha:['Kechikish sababi (kechiksa)'],opt:['Yetkazish grafigi izohi','Video'],int:['Furalar/manipulyatorlar soni (avto)','TTN','On-Time (avto)','Qabul tasdig’i (GPS/foto)']},
+  {opt:['90 kunlik reja izohi','Gift (Score 75+)'],int:['Sotuv → KPI/Forecast (avto)','Lost sabab (Autopsy)','Manager Handover (avto)']}
+ ],
+ b2c:[
+  {opt:['Qo’shimcha izoh'],int:['Lead ID (amoCRM)','Lead Source (avto)','Konversiya (avto)']},
+  {opt:['Loyiha turi izohi'],int:['Narx/hajm hisobi (avto)']},
+  {sha:['Muvaffaqiyatsizlik sababi (ro’yxatdan)'],opt:['Suhbat izohi'],int:['Reminder (avto)','Follow-up (avto)']},
+  {opt:['Kanal izohi'],int:['Diler qoldig’i (ulanganda)','Lead taqdiri (avto tracking)']},
+  {sha:['Brak turi + sabab + foto (brak bo’lsa)','IP manzil (onlayn buyurtma)'],opt:['Yetkazish izohi'],int:['Order ID (Sequence, avto)','Narx (katalogdan, avto)','GPS lokatsiya']},
+  {sha:['Paddon depoziti (~165 000 so’m/dona)','Naqd topshirish hujjati (naqd bo’lsa)'],opt:['To’lov izohi'],int:['To’lov statusi (avto)','Paddon qoldig’i/muddat (avto)','Naqd javobgarlik zanjiri (Driver App)']},
+  {sha:['Kechikish sababi (kechiksa)'],opt:['Yuk holati izohi'],int:['On-Time (avto)','Zarar % (avto)','Buyurtma statusi (avto)']},
+  {opt:['Kunlik izoh'],int:['Kunlik KPI (avto)','Reja/fakt (avto)','Konversiya (avto)']},
+  {sha:['Foto/video + partiya raqami (majburiy)'],opt:['Video'],int:['Replacement Order (avto)','Sifat xulosasi','Kompensatsiya turi']},
+  {opt:['Perspektiv mijoz izohi (usta)'],int:['Qayta xarid → yangi lead (avto)']}
+ ],
+ b2g:[
+  {opt:['Monitoring izohi'],int:['So’rov ma’lumotlari (avto import)','Deadline (avto)']},
+  {sha:['O’tkazish sababi (mos bo’lmasa)'],opt:['Tanlov izohi'],int:['Mahsulot mosligi bahosi (avto)']},
+  {opt:['Sertifikat fayllari'],int:['Garov bloklangan/qoldiq (avto)','Sertifikat muddati (avto eslatma)']},
+  {opt:['Bozor tahlili izohi'],int:['Tannarx/marja hisobi (avto)','Approval statusi (avto)']},
+  {sha:['Rad sababi (yutqazsa, ro’yxatdan)'],opt:['Taklif izohi'],int:['Natija (platforma, avto)']},
+  {opt:['Shartnoma izohi'],int:['Shartnoma (48s avto)','Ishonchnoma (didox)','Ombor broni (avto)']},
+  {sha:['To’lovsiz yuk ruxsati (Savdo rahbari + Direktor)'],opt:['Yetkazish izohi'],int:['Schyot-faktura (avto)','Qabul tasdig’i']},
+  {opt:['Hamkorlik tarixi izohi'],int:['To’lov holati (platforma, avto)','Shartnoma statusi (avto)']}
+ ],
+ export:[
+  {sha:['Distribyutor maxsus shartlari (Director approval)'],opt:['Bozor izohi'],int:['Eksport lead ID (avto)','Mamlakat (avto)']},
+  {opt:['Til / muloqot izohi'],int:['Proforma raqami (avto)','Valyuta narxi USD (avto)','2–3% marja (avto)']},
+  {sha:['To’lovni tasdiqlovchi hujjat (kvitansiya)'],opt:['To’lov izohi'],int:['Valyuta tushumi tasdig’i (Turon Bank)','Repatriatsiya muddati (avto)']},
+  {opt:['Shartnoma o’zgartirish izohi (yurist)'],int:['Kontrakt ID (avto)','Valyuta nazorati statusi (E-Contract)']},
+  {opt:['Sifat pasporti izohi'],int:['Invoice+Packing List (avto generatsiya)','CMR (avto)','CT-1 holati']},
+  {opt:['Deklarant izohi'],int:['GTD (avto)','Bojxona ruxsati (avto)']},
+  {opt:['FCA nuqtasi izohi'],int:['CMR imzo (avto)','FCA topshirish sanasi (avto)','Buyurtma "Topshirildi" (avto)']},
+  {sha:['Reklamatsiya (bo’lsa, 3 ish kuni)'],opt:['KPI izohi'],int:['Deklaratsiya (avto)','Valyuta tushumi hisoboti (avto)']}
+ ],
+};
+function dmGroup(label,cls,color,arr){if(!arr||!arr.length)return '';return `<div class="dmg"><div class="gl"><span class="dotc" style="background:${color}"></span>${label}</div><div class="chips">${arr.map(x=>chip(x,cls)).join('')}</div></div>`}
+const TABS=['umumiy','b2b','b2c','b2g','export'];
+let cur='umumiy',idx=0;
+
+/* feedback + offline kesh */
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+/* eski (auth'dan oldingi) kalitlar endi ishlatilmaydi — tozalab yuboramiz */
+try{['mg_rev','mg_uid','mg_all'].forEach(k=>localStorage.removeItem(k))}catch(e){}
+
+let ME=null;        /* {id,ism_familiya,username,rol} — faqat sessiyadan keladi */
+let FB={};          /* { bolim: { bosqichIndeksi: {d,c} } } */
+let DIRTY=false;    /* serverga yuborilmagan o'zgarish bormi */
+function keshKalit(){return ME?'mg_kesh_'+ME.id:''}
+/* Offline kesh: {fb, dirty, vaqt}. dirty=true bo'lsa keyingi ochilishda LOKAL ustun turadi. */
+function keshYoz(dirty){if(!ME)return;DIRTY=!!dirty;lsSet(keshKalit(),{fb:FB,dirty:DIRTY,vaqt:new Date().toISOString()})}
+function keshOchir(){if(!ME)return;try{localStorage.removeItem(keshKalit())}catch(e){}}
+function fb(k,i){const r=(FB[k]&&FB[k][i])||{};return {d:r.d||(r.a?'ok':null),c:r.c||''}}
+function setFb(k,i,o){FB[k]=FB[k]||{};FB[k][i]=o;keshYoz(true);syncServer()}
+function nodeState(k,i){const f=fb(k,i);return f.d==='ok'?'ok':f.d==='no'?'no':(f.c&&f.c.trim()?'cm':'pn')}
+const STATECOL={ok:'#16a34a',no:'#dc2626',cm:'#d97706',pn:'#8b95a4'};
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function wrap(t,max){const w=t.split(' ');const L=[''];w.forEach(x=>{if((L[L.length-1]+' '+x).trim().length>max)L.push(x);else L[L.length-1]=(L[L.length-1]+' '+x).trim()});return L.slice(0,2)}
+function chip(x,c){return `<span class="chip ${c||''}">${esc(x)}</span>`}
+function fld(k,v){return `<div class="f"><div class="k">${k}</div><div class="v">${v}</div></div>`}
+
+function renderTabs(){
+  const tb=document.getElementById('tabbar');tb.innerHTML='';
+  TABS.forEach(k=>{const s=SEG[k];const done=s.steps.filter((_,i)=>fb(k,i).d==='ok').length;
+    const b=document.createElement('button');b.className='tab'+(k===cur?' active':'');b.style.setProperty('--tc',s.tc);
+    b.innerHTML=`<span class="dt"></span>${s.name} <span class="pg">${done}/${s.steps.length}</span>`;
+    b.onclick=()=>{cur=k;idx=0;renderAll()};tb.appendChild(b)});
+  const sp=document.createElement('div');sp.className='tbsp';tb.appendChild(sp);
+  let tot=0,td=0;TABS.forEach(k=>{tot+=SEG[k].steps.length;td+=SEG[k].steps.filter((_,i)=>fb(k,i).d==='ok').length});
+  const pr=document.createElement('div');pr.className='progwrap';
+  pr.innerHTML=`Umumiy: <b>${td}/${tot}</b><div class="pbar"><i style="width:${Math.round(td/tot*100)}%"></i></div>`;tb.appendChild(pr);
+}
+function renderFlow(){
+  const s=SEG[cur];document.getElementById('flowtitle').textContent=s.title;
+  document.getElementById('flowhint').textContent=`${s.steps.length} bosqich`;
+  const n=s.steps.length,cols=Math.min(4,n),NW=190,NH=74,gx=50,gy=52,m=8;
+  const pos=i=>{const r=Math.floor(i/cols);let c=i%cols;if(r%2)c=cols-1-c;return{x:m+c*(NW+gx),y:m+r*(NH+gy)}};
+  const rows=Math.ceil(n/cols),W=m*2+cols*NW+(cols-1)*gx,H=m*2+rows*NH+(rows-1)*gy;
+  let sv=`<svg width="100%" height="100%" viewBox="-10 -10 ${W+20} ${H+20}" preserveAspectRatio="xMidYMin meet"><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#9aa6b6"/></marker></defs>`;
+  for(let i=0;i<n-1;i++){const a=pos(i),b=pos(i+1),acx=a.x+NW/2,bcx=b.x+NW/2;
+    if(a.y===b.y){const y=a.y+NH/2;sv+=b.x>a.x?`<path class="fedge" d="M${a.x+NW},${y} L${b.x},${y}"/>`:`<path class="fedge" d="M${a.x},${y} L${b.x+NW},${y}"/>`;}
+    else sv+=`<path class="fedge" d="M${acx},${a.y+NH} L${bcx},${b.y}"/>`;}
+  s.steps.forEach((sp,i)=>{const p=pos(i),[lbl,col]=sc(sp.st),stt=nodeState(cur,i),bc=STATECOL[stt],lines=wrap((i+1)+'. '+sp.t,24);
+    sv+=`<g class="nd ${i===idx?'sel':''}" data-i="${i}"><rect class="bx" x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="11"/><rect x="${p.x}" y="${p.y}" width="5" height="${NH}" rx="3" fill="${col}"/>`;
+    sv+=`<circle cx="${p.x+NW-15}" cy="${p.y+15}" r="9" fill="${bc}"/><text x="${p.x+NW-15}" y="${p.y+19}" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">${stt==='ok'?'✓':stt==='no'?'✗':stt==='cm'?'!':''}</text>`;
+    if(sp.dec)sv+=`<rect x="${p.x+11}" y="${p.y+9}" width="11" height="11" fill="var(--warn)" transform="rotate(45 ${p.x+16.5} ${p.y+14.5})"/>`;
+    const tx=p.x+(sp.dec?28:14);lines.forEach((ln,j)=>sv+=`<text class="tt" x="${tx}" y="${p.y+21+j*14}">${esc(ln)}</text>`);
+    sv+=`<text class="stt" x="${p.x+14}" y="${p.y+NH-8}" fill="${col}">${esc(lbl)}</text></g>`;});
+  sv+=`</svg>`;document.getElementById('flowsvg').innerHTML=sv;
+  document.querySelectorAll('.nd').forEach(g=>g.onclick=()=>{idx=+g.dataset.i;renderAll()});
+}
+function renderSide(){
+  const sp=SEG[cur].steps[idx],[lbl,col,bg]=sc(sp.st);
+  document.getElementById('sHead').innerHTML=`<div class="snum">${idx+1}</div><div class="sttl"><h3>${esc(sp.t)}</h3><span class="spill" style="background:${bg};color:${col}">${lbl}</span></div>`;
+  let b=sp.d?`<div class="stepdesc">${esc(sp.d)}</div>`:'';
+  b+=fld('Kim bajaradi',`<b>${esc(sp.kim)}</b>`)+fld('Qachon',esc(sp.qachon));
+  const ext=(DATAEXT[cur]||[])[idx]||{};let dm='';
+  dm+=dmGroup('Majburiy','maj','#16a34a',sp.kirish);
+  dm+=dmGroup('Shartli majburiy','sha','#d97706',ext.sha);
+  dm+=dmGroup('Ixtiyoriy','opt','#8b95a4',ext.opt);
+  dm+=dmGroup('Integratsiyadan (avto)','int','#2563c9',ext.int);
+  if(dm)b+=`<div class="datamod"><div class="dmh">Ma’lumot maydonlari</div>${dm}</div>`;
+  b+=fld('Manba',esc(sp.manba))+fld('Natija',esc(sp.natija))+fld('Keyingi bosqich',esc(sp.keyingi));
+  if(sp.tizim)b+=`<div class="f"><div class="k">Tizim / integratsiya</div><div class="chips">${sp.tizim.map(x=>chip(x,'sys')).join('')}</div></div>`;
+  if(sp.qoida)b+=`<div class="callout co-dec"><div class="ct">Qoida</div><div class="cx">${esc(sp.qoida)}</div></div>`;
+  if(sp.appr)b+=`<div class="callout co-appr"><div class="ct">Tasdiqlash (Approval)</div><div class="cx">${esc(sp.appr)}</div></div>`;
+  if(sp.dec)b+=`<div class="callout co-dec"><div class="ct">Qaror nuqtasi</div><div class="cx"><b>${esc(sp.dec.q)}</b><div class="branches">${sp.dec.br.map(x=>`<span class="br" ${x.to!==undefined?`data-to="${x.to}" role="button" tabindex="0"`:''}>${esc(x.l)}</span>`).join('')}</div></div></div>`;
+  if(sp.muammo)b+=`<div class="callout co-bad"><div class="ct">Hozirgi holatdagi muammo (AS-IS)</div><div class="cx">${esc(sp.muammo)}</div></div>`;
+  if(sp.ochiq)b+=`<div class="callout co-warn"><div class="ct">Ochiq savol — hal qilinishi kerak</div><div class="cx">${esc(sp.ochiq)}</div></div>`;
+  const sBody=document.getElementById('sBody');
+  sBody.innerHTML=b;
+  /* qaror shoxobchalari — inline onclick o'rniga delegatsiya (CSP uchun) */
+  sBody.onclick=e=>{const t=e.target.closest('.br[data-to]');if(t){idx=+t.dataset.to;renderAll()}};
+  sBody.onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const t=e.target.closest('.br[data-to]');if(t){e.preventDefault();idx=+t.dataset.to;renderAll()}};
+  const f=fb(cur,idx);
+  const isLast=idx===SEG[cur].steps.length-1;
+  document.getElementById('sFoot').innerHTML=`<div class="sfhead">Bu bosqich bo’yicha qaroringiz <span class="sv" id="savedTag">✓ saqlandi</span></div>
+    <div class="apbtns"><button class="apbtn ok ${f.d==='ok'?'on':''}" id="apOk">Tasdiqlayman</button><button class="apbtn no ${f.d==='no'?'on':''}" id="apNo">Tasdiqlamayman</button></div>
+    <textarea class="aptext" id="apTxt" placeholder="Izoh / e’tiroz / o’zgartirish taklifi...">${esc(f.c)}</textarea>
+    ${isLast?`<div style="font-size:11.5px;color:var(--ok-ink);background:var(--ok-bg);border-radius:8px;padding:7px 10px;margin-top:2px;text-align:center">Bo‘lim yakuni — javoblaringizni yuborishingiz mumkin</div>`:''}
+    <div class="sfnav"><button class="nbtn" id="prevB">Orqaga</button>${isLast?'<button class="nbtn pri" id="subBtn">Javoblarni JSON qilib saqlash</button>':'<button class="nbtn pri" id="nextB">Keyingi</button>'}</div>`;
+  const setD=v=>{const cf=fb(cur,idx);cf.d=cf.d===v?null:v;setFb(cur,idx,cf);flashSaved();renderTabs();renderFlow();document.getElementById('apOk').classList.toggle('on',cf.d==='ok');document.getElementById('apNo').classList.toggle('on',cf.d==='no')};
+  document.getElementById('apOk').onclick=()=>setD('ok');
+  document.getElementById('apNo').onclick=()=>setD('no');
+  let tmr;document.getElementById('apTxt').oninput=e=>{const cf=fb(cur,idx);cf.c=e.target.value;setFb(cur,idx,cf);clearTimeout(tmr);tmr=setTimeout(()=>{flashSaved();renderFlow()},400)};
+  document.getElementById('prevB').disabled=idx===0;document.getElementById('prevB').onclick=()=>{if(idx>0){idx--;renderAll()}};
+  if(isLast)document.getElementById('subBtn').onclick=async()=>{
+    const bt=document.getElementById('subBtn'),o=bt.textContent;
+    bt.disabled=true;bt.textContent='Saqlanmoqda…';
+    const ok=await saveJson();
+    bt.disabled=false;bt.textContent=ok?'✓ Bazaga saqlandi':'JSON yuklandi — bazaga saqlanmadi';
+    setTimeout(()=>{const b2=document.getElementById('subBtn');if(b2)b2.textContent=o},2400);
+  };
+  else document.getElementById('nextB').onclick=()=>{idx++;renderAll()};
+}
+function flashSaved(){const t=document.getElementById('savedTag');if(!t)return;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400)}
+function renderAll(){renderTabs();renderFlow();renderSide();const sel=document.querySelector('.nd.sel');if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});document.getElementById('sBody').scrollTo(0,0);}
+
+/* Saqlash: har bir odamning javoblari /api orqali Supabase bazasiga yoziladi.
+   Ulanish bo'lmasa — localStorage'da qoladi va JSON fayl yuklab olinadi. */
+const HOLAT={ok:'tasdiqlangan',no:'tasdiqlanmagan'};
+function buildReviewer(){const o={};TABS.forEach(k=>{
+  const st=SEG[k].steps.map((sp,i)=>{const f=fb(k,i);return {n:i+1,bosqich:sp.t,holat:HOLAT[f.d]||'kutilmoqda',izoh:f.c||''}});
+  o[k]={bolim:SEG[k].name,sarlavha:SEG[k].title,
+    tasdiqlangan:st.filter(x=>x.holat==='tasdiqlangan').length,
+    tasdiqlanmagan:st.filter(x=>x.holat==='tasdiqlanmagan').length,
+    kutilmoqda:st.filter(x=>x.holat==='kutilmoqda').length,
+    izohlar_soni:st.filter(x=>x.izoh.trim()).length,
+    bosqichlar:st}});return o}
+function buildPayload(){
+  const b=buildReviewer();const v=Object.values(b);
+  return {ism_familiya:(ME&&ME.ism_familiya)||'nomalum',username:(ME&&ME.username)||'',
+    yangilangan:new Date().toISOString(),
+    jami:{bosqichlar:v.reduce((s,x)=>s+x.bosqichlar.length,0),
+      tasdiqlangan:v.reduce((s,x)=>s+x.tasdiqlangan,0),
+      tasdiqlanmagan:v.reduce((s,x)=>s+x.tasdiqlanmagan,0),
+      kutilmoqda:v.reduce((s,x)=>s+x.kutilmoqda,0),
+      izohlar:v.reduce((s,x)=>s+x.izohlar_soni,0)},
+    bolimlar:b};
+}
+/* Supabase uchun tekis ro'yxat: har bir bosqich — alohida qator */
+function buildRows(){const out=[];TABS.forEach(k=>SEG[k].steps.forEach((sp,i)=>{const f=fb(k,i);
+  out.push({bolim:k,bosqich_raqami:i+1,bosqich_nomi:sp.t,holat:HOLAT[f.d]||'kutilmoqda',izoh:f.c||''})}));return out}
+
+let syncTmr,retryTmr,BUSY=false,FAILS=0;
+
+/* Holat ko'rsatkichi — saqlanmaganini foydalanuvchi darhol ko'radi */
+function setStat(s){
+  const el=document.getElementById('netStat');if(!el)return;
+  const T={idle:['',''],save:['nst-save','Saqlanmoqda...'],ok:['nst-ok','Bazaga saqlandi'],
+           err:['nst-err','Saqlanmadi — qayta urinilmoqda']};
+  const [c,t]=T[s]||T.idle;el.className='nst '+c;el.textContent=t;
+}
+/* Guard: sessiya yo'q bo'lsa "Saqlanmoqda..." abadiy osilib qolmasin */
+function syncServer(){if(!ME)return;DIRTY=true;setStat('save');clearTimeout(syncTmr);syncTmr=setTimeout(pushServer,600)}
+
+async function pushServer(){
+  if(!ME)return false;
+  if(BUSY){DIRTY=true;return false}
+  BUSY=true;DIRTY=false;clearTimeout(retryTmr);
+  try{
+    const r=await fetch('/api/javoblar',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({javoblar:buildRows()})});   /* foydalanuvchi_id sessiyadan olinadi */
+    if(r.status===401){                         /* qayta urinish CHEKSIZ SIKL bo'lardi */
+      DIRTY=true;sessiyaTugadi();return false;
+    }
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    FAILS=0;setStat('ok');
+    /* saqlash davomida yana o'zgargan bo'lsa — keshni toza deb belgilamaymiz */
+    if(DIRTY)syncServer();else keshYoz(false);
+    setTimeout(()=>{if(!DIRTY&&!FAILS)setStat('idle')},2500);
+    return true;
+  }catch(e){
+    DIRTY=true;FAILS++;setStat('err');
+    const kut=Math.min(30000,1500*Math.pow(2,Math.min(FAILS,5)));   /* 3s → 30s */
+    clearTimeout(retryTmr);retryTmr=setTimeout(pushServer,kut);
+    return false;
+  }finally{BUSY=false}
+}
+/* Aloqa tiklanganda yoki oynaga qaytganda saqlanmaganini yuborish */
+window.addEventListener('online',()=>{if(DIRTY)pushServer()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&DIRTY)pushServer()});
+/* Server javoblaridan FB tuzish */
+const D2K={tasdiqlangan:'ok',tasdiqlanmagan:'no'};
+function serverdanFb(javoblar){
+  const n={};(javoblar||[]).forEach(j=>{const d=D2K[j.holat]||null;
+    if(!d&&!(j.izoh||'').trim())return;
+    n[j.bolim]=n[j.bolim]||{};n[j.bolim][j.bosqich_raqami-1]={d:d,c:j.izoh||''}});
+  return n;
+}
+
+/* Sessiya ochilgach ilovani ishga tushirish.
+   MA'LUMOT YO'QOLISHINING OLDINI OLISH: keshda dirty=true bo'lsa LOKAL nusxa ustun
+   turadi va darhol serverga yuboriladi — server holati uni bosib ketmaydi. */
+function boshla(res){
+  if(!res||!res.foydalanuvchi||!res.foydalanuvchi.id){gateKorsat('Server javobi tushunarsiz — qayta urining.');return}
+  ME=res.foydalanuvchi;
+  document.getElementById('whoName').textContent=ME.ism_familiya||'';
+  document.getElementById('whoUser').textContent=ME.username?('@'+ME.username):'';
+  const kesh=lsGet(keshKalit(),null);
+  const lokalUstun=!!(kesh&&kesh.dirty===true&&kesh.fb&&typeof kesh.fb==='object');
+  FB=lokalUstun?kesh.fb:serverdanFb(res.javoblar);
+  DIRTY=lokalUstun;
+  gate.style.display='none';
+  document.getElementById('app').style.display='flex';
+  cur='umumiy';idx=0;renderAll();
+  if(lokalUstun){setStat('save');pushServer()}   /* offline yozilganlar serverga ketadi */
+  else{keshYoz(false);setStat('idle')}
+}
+
+/* Sahifa ochilganda: GET /api/men → 401 bo'lsa gate, 200 bo'lsa ilova */
+async function sessiyaTekshir(){
+  let res;
+  try{                                   /* faqat tarmoq qismi — render xatosi bu yerga tushmasin */
+    const r=await fetch('/api/men',{credentials:'same-origin'});
+    if(r.status===401){gateKorsat();return}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    res=await r.json();
+  }catch(e){
+    gateKorsat('Serverga ulanib bo‘lmadi. Internet aloqasini tekshirib, sahifani yangilang.');
+    return;
+  }
+  boshla(res);
+}
+
+/* Seans tugadi — ilovani yopib gate'ni qaytaramiz (kesh dirty holicha qoladi) */
+function sessiyaTugadi(){
+  ME=null;clearTimeout(syncTmr);clearTimeout(retryTmr);FAILS=0;setStat('idle');
+  gateKorsat('Seans tugadi — qaytadan kiring');
+}
+
+async function saveJson(){
+  const ok=await pushServer();
+  const nom=(ME&&(ME.username||ME.ism_familiya))||'tekshiruvchi';
+  const blob=new Blob([JSON.stringify(buildPayload(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`megaton_${String(nom).replace(/\s+/g,'_')}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  return ok;
+}
+
+/* ===== GATE: ism-familiya bilan kirish (parolsiz) ===== */
+const gate=document.getElementById('gate'),gerr=document.getElementById('gateErr');
+const formKirish=document.getElementById('formKirish');
+
+let OGOH=null;   /* file:// ogohlantirishi — xato tozalanganda qayta ko'rsatiladi */
+function gxato(m){
+  if(!m&&OGOH){gerr.innerHTML=OGOH.html;gerr.setAttribute('style',OGOH.css);return}
+  gerr.removeAttribute('style');gerr.textContent=m||'';
+}
+function gateKorsat(msg){
+  document.getElementById('app').style.display='none';
+  gate.style.display='flex';
+  if(msg)gxato(msg);
+  const f=document.getElementById('loginIsm');if(f)f.focus();
+}
+
+/* JSON POST — cookie sessiyasi uchun credentials shart */
+async function postJson(url,body){
+  const r=await fetch(url,{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  let d={};try{d=await r.json()}catch(e){}
+  return {ok:r.ok,status:r.status,d};
+}
+function tugmaBand(btn,band,matn){btn.disabled=band;btn.textContent=band?'Kuting…':matn}
+
+/* Kirish — faqat ism-familiya */
+formKirish.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const ism=document.getElementById('loginIsm').value.replace(/\s+/g,' ').trim();
+  if(ism.length<3){gxato('Iltimos, to‘liq ism-familiyangizni kiriting (kamida 3 belgi).');return}
+  if(ism.length>80){gxato('Ism-familiya juda uzun.');return}
+  const btn=document.getElementById('loginBtn');
+  gxato('');tugmaBand(btn,true,'Kirish');
+  try{
+    const {ok,d}=await postJson('/api/kirish',{ism_familiya:ism});
+    if(!ok){gxato(d.xato||'Kirishda xatolik yuz berdi.');return}
+    boshla(d);
+  }catch(err){gxato('Serverga ulanib bo‘lmadi. Internet aloqasini tekshiring.')}
+  finally{tugmaBand(btn,false,'Kirish')}
+});
+
+/* Chiqish: sessiyani yopadi, lokal keshni tozalaydi */
+document.getElementById('logoutBtn').onclick=async()=>{
+  const btn=document.getElementById('logoutBtn');btn.disabled=true;
+  clearTimeout(syncTmr);clearTimeout(retryTmr);
+  try{if(DIRTY)await pushServer()}catch(e){}          /* saqlanmaganini yuborib ko'ramiz */
+  try{await fetch('/api/chiqish',{method:'POST',credentials:'same-origin'})}catch(e){}
+  keshOchir();
+  location.reload();
+};
+
+/* sahifa yopilganda oxirgi holatni yuborish — faqat saqlanmagan o'zgarish bo'lsa */
+window.addEventListener('beforeunload',()=>{
+  if(!ME||!DIRTY||!navigator.sendBeacon)return;
+  navigator.sendBeacon('/api/javoblar',
+    new Blob([JSON.stringify({javoblar:buildRows()})],{type:'application/json'}));
+});
+
+/* Klaviatura navigatsiyasi — gate ochiq bo'lsa ishlamasin */
+document.addEventListener('keydown',e=>{
+  if(gate.style.display!=='none')return;
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight'){const b=document.getElementById('nextB');if(b&&!b.disabled)b.click()}
+  if(e.key==='ArrowLeft'){const b=document.getElementById('prevB');if(b&&!b.disabled)b.click()}
+});
+
+/* Ishga tushish */
+if(location.protocol==='file:'){
+  /* Fayl sifatida ochilsa (file://) baza bilan ishlamaydi — buni yashirmaymiz */
+  OGOH={html:'<b>Diqqat:</b> sahifa fayl sifatida ochilgan — kirish va saqlash ishlamaydi.<br>Manzilni <b>http://localhost:3000</b> yoki sayt manzili orqali oching.',
+        css:'color:#a11919;background:#fdeaea;border:1px solid #f5b5b5;border-radius:9px;padding:9px 11px;line-height:1.5;text-align:left'};
+  gxato('');
+}else{
+  sessiyaTekshir();
+}
+</script>
+</body>
+</html>

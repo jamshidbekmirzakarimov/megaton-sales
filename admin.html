@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Megaton — Admin panel</title>
+<style>
+:root{
+  --bg:#eceff3; --s2:#ffffff; --s1:#f5f7fa; --ink:#1d2530; --sec:#4b5666; --mut:#8b95a4; --line:#dde2e9;
+  --brand:#ef8a17; --brand-bg:#fff3e4; --brand-ink:#a55c07;
+  --ok:#16a34a; --ok-bg:#e7f6ec; --ok-ink:#0f7434;
+  --warn:#d97706; --warn-bg:#fdf1de; --warn-ink:#8a5107;
+  --bad:#dc2626; --bad-bg:#fdeaea; --bad-ink:#a11919;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;height:100vh;overflow:hidden;font-size:14px}
+
+/* GATE */
+.gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(1000px 500px at 50% -10%,#ffe6c6,transparent),var(--bg)}
+.gatecard{background:var(--s2);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 60px rgba(20,30,45,.16);padding:38px 40px;max-width:420px;width:100%;text-align:center}
+.gatecard svg{width:56px;height:56px;margin-bottom:6px}
+.gb{font-size:22px;font-weight:800;color:var(--brand);letter-spacing:.5px}
+.gs{font-size:10px;letter-spacing:3px;color:var(--mut);font-weight:700;margin-bottom:18px}
+.gatecard h1{font-size:18px;font-weight:700;margin-bottom:6px}
+.gatecard p{font-size:13.5px;color:var(--sec);line-height:1.5;margin-bottom:22px}
+/* forma ko'p maydonli — chapga tekislanadi */
+.gate .fld{text-align:left;margin-bottom:11px}
+.gate .fld label{display:block;font-size:11.5px;font-weight:700;color:var(--mut);margin-bottom:5px;letter-spacing:.3px}
+.gatecard input{width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;outline:none;text-align:left}
+.gatecard input:focus{border-color:var(--brand)}
+.gbtn{width:100%;margin-top:14px;padding:13px;border:none;border-radius:11px;background:var(--brand);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.gbtn:disabled{opacity:.4;cursor:not-allowed}
+.gbtn.alt{background:var(--s1);color:var(--sec);border:1px solid var(--line)}
+.gerr{font-size:12px;color:var(--bad);margin-top:9px;min-height:14px}
+.gwait{font-size:13.5px;color:var(--mut);padding:14px 0}
+
+/* APP */
+#app{display:none;flex-direction:column;height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(--s2);border-bottom:1px solid var(--line);flex:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand svg{width:32px;height:32px}
+.brand b{font-size:15px;letter-spacing:.5px;color:var(--brand);display:block;line-height:1}
+.brand span{font-size:8px;letter-spacing:2px;color:var(--mut);font-weight:600}
+.tag{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--brand-ink);background:var(--brand-bg);border:1px solid #f3d3a6;padding:3px 9px;border-radius:20px}
+.hsp{flex:1}
+.me{font-size:12.5px;color:var(--sec)}
+.me span{color:var(--mut)}
+.btn{padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:var(--s2);color:var(--sec);font-size:12.5px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--s1)}
+.btn.pri{border-color:var(--brand);background:var(--brand-bg);color:var(--brand-ink)}
+.btn.pri:hover{background:var(--brand);color:#fff}
+
+/* KPI */
+.kpis{display:flex;gap:10px;padding:12px 18px;flex:none;overflow-x:auto}
+.kpi{background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
+.kpi .n{font-size:22px;font-weight:800;line-height:1.1}
+.kpi .l{font-size:11px;color:var(--mut);font-weight:600;margin-top:2px}
+
+/* FILTER */
+.filters{display:flex;align-items:center;gap:7px;padding:0 18px 11px;flex:none;flex-wrap:wrap}
+.filters input{padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;outline:none;min-width:220px;background:var(--s2)}
+.filters input:focus{border-color:var(--brand)}
+.chipf{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--s2);font-size:12.5px;font-weight:600;color:var(--sec);cursor:pointer}
+.chipf.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.fsp{flex:1}
+.cnt{font-size:12.5px;color:var(--mut)}
+
+/* BODY */
+.wrap{flex:1;display:flex;gap:14px;padding:0 18px 16px;min-height:0}
+.col{background:var(--s2);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0}
+.left{width:290px;flex:none}
+.right{flex:1}
+.colh{padding:11px 15px;border-bottom:1px solid var(--line);font-size:12px;font-weight:700;color:var(--mut);letter-spacing:.4px;text-transform:uppercase;flex:none}
+.scroll{overflow-y:auto;padding:8px;min-height:0}
+
+.uitem{padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent;margin-bottom:3px}
+.uitem:hover{background:var(--s1)}
+.uitem.on{background:var(--brand-bg);border-color:#f3d3a6}
+.uitem .un{font-size:13.5px;font-weight:700}
+.uitem .ud{font-size:11px;color:var(--mut);margin-top:3px}
+.uitem .uu{font-size:11.5px;color:var(--brand-ink);margin-top:2px}
+.badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1px;padding:1px 6px;border-radius:20px;margin-left:6px;vertical-align:1px;
+  background:var(--brand-bg);color:var(--brand-ink);border:1px solid #f3d3a6}
+.off{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1px;padding:1px 6px;border-radius:20px;margin-left:6px;vertical-align:1px;
+  background:var(--bad-bg);color:var(--bad-ink)}
+.mini{display:flex;gap:3px;margin-top:6px;height:5px;border-radius:3px;overflow:hidden;background:var(--s1)}
+.mini i{display:block}
+
+.grp{margin-bottom:14px}
+.grph{display:flex;align-items:center;gap:9px;padding:9px 14px;background:var(--s1);border-radius:10px;position:sticky;top:0;z-index:2}
+.grph .dot{width:9px;height:9px;border-radius:50%}
+.grph b{font-size:13.5px}
+.grph .sub{font-size:11.5px;color:var(--mut)}
+.row{display:flex;gap:11px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.row:last-child{border:none}
+.rn{width:26px;flex:none;font-size:12px;font-weight:700;color:var(--mut);text-align:right;padding-top:2px}
+.rb{flex:1;min-width:0}
+.rt{font-size:13.5px;font-weight:600;line-height:1.35}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:20px;margin-left:8px;vertical-align:1px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok-ink)}
+.p-no{background:var(--bad-bg);color:var(--bad-ink)}
+.p-pn{background:var(--s1);color:var(--mut)}
+.cm{margin-top:7px;background:var(--warn-bg);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:8px 11px;font-size:13px;line-height:1.5;color:#5b4a2c;white-space:pre-wrap;word-break:break-word}
+.who{font-size:11.5px;color:var(--mut);margin-top:5px}
+.who .un{color:var(--brand-ink)}
+.empty{padding:50px 20px;text-align:center;color:var(--mut);font-size:13.5px}
+.load{padding:50px;text-align:center;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gatecard">
+    <svg viewBox="0 0 44 44"><g fill="#ef8a17">
+      <path d="M18 6 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+      <path d="M10 22 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+    </g></svg>
+    <div class="gb">MEGATON</div><div class="gs">ADMIN PANEL</div>
+
+    <!-- sessiya tekshirilayotgan payt -->
+    <div id="gateWait"><div class="gwait">Tekshirilmoqda...</div></div>
+
+    <!-- kirish formasi -->
+    <div id="gateForm" style="display:none">
+      <h1>Kirish</h1>
+      <p>Xodimlarning javoblari va izohlarini ko‘rish uchun admin hisobingiz bilan kiring.</p>
+      <div class="fld">
+        <label for="loginUser">Username</label>
+        <input id="loginUser" type="text" autocomplete="username" aria-label="Username" spellcheck="false">
+      </div>
+      <div class="fld">
+        <label for="loginPass">Parol</label>
+        <input id="loginPass" type="password" autocomplete="current-password" aria-label="Parol">
+      </div>
+      <button class="gbtn" id="loginBtn">Kirish</button>
+    </div>
+
+    <!-- admin emas -->
+    <div id="gateDeny" style="display:none">
+      <h1>Ruxsat yo‘q</h1>
+      <p id="denyText">Sizda admin huquqi yo‘q. Boshqa hisob bilan kiring.</p>
+      <button class="gbtn alt" id="denyOut">Chiqish</button>
+    </div>
+
+    <div class="gerr" id="gateErr" role="alert"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 44 44"><g fill="#ef8a17">
+        <path d="M18 6 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+        <path d="M10 22 h16 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-13 l-6 -6 v-4 a3 3 0 0 1 3 -6 z"/>
+      </g></svg>
+      <div><b>MEGATON</b><span>AVTOKLAV GAZOBLOK</span></div>
+    </div>
+    <span class="tag">ADMIN</span>
+    <div class="hsp"></div>
+    <span class="me" id="me"></span>
+    <span class="cnt" id="upd"></span>
+    <button class="btn" id="refresh">Yangilash</button>
+    <button class="btn pri" id="csv">CSV yuklab olish</button>
+    <button class="btn" id="out">Chiqish</button>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="filters">
+    <input id="q" placeholder="Qidirish — ism, username, bosqich yoki izoh matni...">
+    <button class="chipf" data-f="izoh">Faqat izohlilar</button>
+    <button class="chipf" data-f="no">Tasdiqlanmagan</button>
+    <button class="chipf" data-f="ok">Tasdiqlangan</button>
+    <button class="chipf" data-f="pn">Kutilmoqda</button>
+    <div class="fsp"></div>
+    <span class="cnt" id="cnt"></span>
+  </div>
+
+  <div class="wrap">
+    <div class="col left">
+      <div class="colh">Xodimlar</div>
+      <div class="scroll" id="users"></div>
+    </div>
+    <div class="col right">
+      <div class="colh" id="rightH">Javoblar</div>
+      <div class="scroll" id="rows"><div class="load">Yuklanmoqda...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BOL=[['umumiy','Umumiy','#ef8a17'],['b2b','B2B','#3b82f6'],['b2c','B2C','#f5a623'],['b2g','B2G','#16a34a'],['export','Export','#8b5cf6']];
+const BMAP=Object.fromEntries(BOL.map((b,i)=>[b[0],{nomi:b[1],rang:b[2],tartib:i}]));
+const PILL={tasdiqlangan:['p-ok','Tasdiqlangan'],tasdiqlanmagan:['p-no','Tasdiqlanmagan'],kutilmoqda:['p-pn','Kutilmoqda']};
+
+/* MEN — joriy admin; SEL — tanlangan xodimning foydalanuvchi_id si */
+let MEN=null,DATA=[],ODAM=[],SEL=null,FILT=new Set(),Q='';
+
+const $=id=>document.getElementById(id);
+/* atribut ichida ham ishlatiladi — " va ' albatta qochiriladi (XSS) */
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const sana=s=>{if(!s)return '';const d=new Date(s);return d.toLocaleString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})};
+/* ODAM dan id bo'yicha topish */
+const odam=id=>ODAM.find(o=>o.id===id)||null;
+
+/* ---- yuklash ---- */
+async function load(){
+  const o={credentials:'same-origin'};
+  const [a,b]=await Promise.all([fetch('/api/hisobot',o),fetch('/api/hisobot?toliq=1',o)]);
+  if(a.status===401||b.status===401){const e=new Error('401');e.kod=401;throw e}
+  if(a.status===403||b.status===403){const e=new Error('403');e.kod=403;throw e}
+  if(!a.ok||!b.ok)throw new Error('server');
+  const j1=await a.json(),j2=await b.json();
+  ODAM=j1.odamlar||[];DATA=j2.javoblar||[];
+}
+
+/* ---- filtrlash ---- */
+function match(r){
+  /* "Faqat izohlilar" — AND shart */
+  if(FILT.has('izoh')&&!(r.izoh||'').trim())return false;
+  /* holat chiplar — OR shart */
+  const st=r.holat==='tasdiqlangan'?'ok':r.holat==='tasdiqlanmagan'?'no':'pn';
+  const stf=['ok','no','pn'].filter(x=>FILT.has(x));
+  if(stf.length&&!stf.includes(st))return false;
+  if(Q){const s=Q.toLowerCase();
+    if(!((r.ism_familiya||'').toLowerCase().includes(s)||
+         (r.username||'').toLowerCase().includes(s)||
+         (r.bosqich_nomi||'').toLowerCase().includes(s)||
+         (r.izoh||'').toLowerCase().includes(s)))return false}
+  return true;
+}
+const filtered=()=>DATA.filter(match);
+
+/* ---- KPI ---- */
+function renderKpi(){
+  const d=DATA;
+  const c=h=>d.filter(x=>x.holat===h).length;
+  const iz=d.filter(x=>(x.izoh||'').trim()).length;
+  const k=[['Xodimlar',ODAM.length,'var(--ink)'],['Tasdiqlangan',c('tasdiqlangan'),'var(--ok)'],
+           ['Tasdiqlanmagan',c('tasdiqlanmagan'),'var(--bad)'],['Kutilmoqda',c('kutilmoqda'),'var(--mut)'],
+           ['Izohlar',iz,'var(--warn)']];
+  $('kpis').innerHTML=k.map(([l,n,col])=>`<div class="kpi"><div class="n" style="color:${col}">${n}</div><div class="l">${l}</div></div>`).join('');
+  const last=ODAM.map(o=>o.yangilangan).filter(Boolean).sort().pop();
+  $('upd').textContent=last?'Oxirgi faollik: '+sana(last):'';
+}
+
+/* ---- chap ustun: xodimlar (foydalanuvchi_id bo'yicha guruhlanadi) ---- */
+function renderUsers(){
+  const rows=filtered();
+  const byId={};rows.forEach(r=>{(byId[r.foydalanuvchi_id]=byId[r.foydalanuvchi_id]||[]).push(r)});
+  let h=`<div class="uitem ${SEL===null?'on':''}" data-u=""><div class="un">Hammasi</div>
+    <div class="ud">${ODAM.length} xodim · ${rows.length} yozuv</div></div>`;
+  /* filtr/qidiruv bo'lsa — faqat mos yozuvi borlar */
+  const royxat=ODAM.filter(o=>(!Q&&!FILT.size)?true:byId[o.id]);
+  h+=royxat.map(o=>{
+    const rs=byId[o.id]||[];
+    const ok=rs.filter(r=>r.holat==='tasdiqlangan').length,
+          no=rs.filter(r=>r.holat==='tasdiqlanmagan').length,
+          iz=rs.filter(r=>(r.izoh||'').trim()).length,
+          tot=rs.length||1;
+    const nishon=(o.rol==='admin'?'<span class="badge">ADMIN</span>':'')+
+                 (o.faol===false?'<span class="off">O‘CHIQ</span>':'');
+    return `<div class="uitem ${SEL===o.id?'on':''}" data-u="${esc(o.id)}">
+      <div class="un">${esc(o.ism_familiya)}${nishon}</div>
+      <div class="uu">@${esc(o.username)}</div>
+      <div class="ud">${ok} tasdiq · ${no} rad · ${iz} izoh</div>
+      <div class="mini"><i style="background:var(--ok);width:${ok/tot*100}%"></i><i style="background:var(--bad);width:${no/tot*100}%"></i></div>
+      <div class="ud">${sana(o.yangilangan||o.oxirgi_kirish)}</div></div>`}).join('');
+  $('users').innerHTML=h;
+  $('users').querySelectorAll('.uitem').forEach(el=>el.onclick=()=>{SEL=el.dataset.u||null;render()});
+}
+
+/* ---- o'ng ustun: javoblar ---- */
+function renderRows(){
+  let rows=filtered();
+  if(SEL)rows=rows.filter(r=>r.foydalanuvchi_id===SEL);
+  const o=SEL?odam(SEL):null;
+  $('rightH').textContent=SEL?((o?o.ism_familiya+' (@'+o.username+')':'Xodim'))+' — javoblari':'Barcha xodimlar javoblari';
+  $('cnt').textContent=rows.length+' yozuv';
+  if(!rows.length){$('rows').innerHTML='<div class="empty">Hech narsa topilmadi.<br>Filtr yoki qidiruvni o‘zgartiring.</div>';return}
+
+  /* bo'limlar bo'yicha guruhlash */
+  const g={};rows.forEach(r=>{(g[r.bolim]=g[r.bolim]||[]).push(r)});
+  const kodlar=Object.keys(g).sort((a,b)=>(BMAP[a]?.tartib??9)-(BMAP[b]?.tartib??9));
+
+  $('rows').innerHTML=kodlar.map(k=>{
+    const b=BMAP[k]||{nomi:k,rang:'#999'};
+    const list=g[k].slice().sort((x,y)=>
+      (x.ism_familiya||'').localeCompare(y.ism_familiya||'')||
+      (x.username||'').localeCompare(y.username||'')||
+      x.bosqich_raqami-y.bosqich_raqami);
+    const iz=list.filter(r=>(r.izoh||'').trim()).length;
+    return `<div class="grp">
+      <div class="grph"><span class="dot" style="background:${b.rang}"></span>
+        <b>${esc(b.nomi)}</b><span class="sub">${list.length} yozuv · ${iz} izoh</span></div>
+      ${list.map(r=>{
+        const [cls,lbl]=PILL[r.holat]||PILL.kutilmoqda;
+        const ro=odam(r.foydalanuvchi_id);
+        const nishon=ro&&ro.rol==='admin'?'<span class="badge">ADMIN</span>':'';
+        return `<div class="row">
+          <div class="rn">${r.bosqich_raqami}</div>
+          <div class="rb">
+            <div class="rt">${esc(r.bosqich_nomi||'—')}<span class="pill ${cls}">${lbl}</span></div>
+            ${(r.izoh||'').trim()?`<div class="cm">${esc(r.izoh)}</div>`:''}
+            <div class="who">${esc(r.ism_familiya)}${nishon} · <span class="un">@${esc(r.username)}</span> · ${sana(r.yangilangan)}</div>
+          </div></div>`}).join('')}
+    </div>`}).join('');
+}
+
+function render(){renderKpi();renderUsers();renderRows()}
+
+/* ---- CSV ---- */
+function csv(){
+  let rows=filtered();if(SEL)rows=rows.filter(r=>r.foydalanuvchi_id===SEL);
+  const c=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+  const out=[['Ism familiya','Username','Bo\'lim','Bosqich №','Bosqich','Holat','Izoh','Yangilangan'].map(c).join(',')]
+    .concat(rows.map(r=>[r.ism_familiya,r.username,(BMAP[r.bolim]||{}).nomi||r.bolim,r.bosqich_raqami,r.bosqich_nomi,r.holat,r.izoh,r.yangilangan].map(c).join(',')));
+  const blob=new Blob(['﻿'+out.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='megaton_javoblar.csv';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+}
+
+/* ---- gate holatlari ---- */
+function gateHolat(nima){
+  $('gateWait').style.display=nima==='kutish'?'':'none';
+  $('gateForm').style.display=nima==='forma'?'':'none';
+  $('gateDeny').style.display=nima==='rad'?'':'none';
+}
+function gateKorsat(xabar){
+  $('gate').style.display='';$('app').style.display='none';
+  gateHolat('forma');$('gateErr').textContent=xabar||'';
+  $('loginUser').focus();
+}
+function ruxsatYoq(f){
+  $('gate').style.display='';$('app').style.display='none';
+  gateHolat('rad');
+  $('denyText').textContent=f?`${f.ism_familiya} (@${f.username}) — sizda admin huquqi yo‘q.`
+                            :'Sizda admin huquqi yo‘q.';
+  $('gateErr').textContent='';
+}
+
+/* ---- panelni ochish ---- */
+async function panelniOch(){
+  try{
+    await load();
+    $('me').innerHTML=MEN?`<b>${esc(MEN.ism_familiya)}</b> <span>@${esc(MEN.username)}</span>`:'';
+    $('gate').style.display='none';$('app').style.display='flex';
+    render();
+    return true;
+  }catch(e){
+    if(e.kod===401){gateKorsat('Seans tugadi — qaytadan kiring.');return false}
+    if(e.kod===403){ruxsatYoq(MEN);return false}
+    throw e;
+  }
+}
+
+/* ---- sahifa ochilganda: GET /api/men ---- */
+async function boshla(){
+  gateHolat('kutish');
+  let r;
+  try{r=await fetch('/api/men',{credentials:'same-origin'})}
+  catch(e){gateKorsat('Serverga ulanib bo‘lmadi.');return}
+  if(r.status===401){gateKorsat('');return}
+  if(!r.ok){gateKorsat('Serverga ulanib bo‘lmadi.');return}
+  let j;try{j=await r.json()}catch(e){gateKorsat('Serverga ulanib bo‘lmadi.');return}
+  MEN=j.foydalanuvchi||null;
+  if(!MEN){gateKorsat('');return}
+  if(MEN.rol!=='admin'){ruxsatYoq(MEN);return}
+  try{await panelniOch()}catch(e){gateKorsat('Serverga ulanib bo‘lmadi.')}
+}
+
+/* ---- kirish ---- */
+async function kir(){
+  const username=$('loginUser').value.trim().toLowerCase();
+  const parol=$('loginPass').value;
+  $('gateErr').textContent='';
+  if(!username||!parol){$('gateErr').textContent='Username va parolni kiriting.';return}
+  const b=$('loginBtn');b.disabled=true;b.textContent='Tekshirilmoqda...';
+  try{
+    const r=await fetch('/api/admin-kirish',{
+      method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,parol})
+    });
+    let j={};try{j=await r.json()}catch(e){}
+    if(!r.ok){$('gateErr').textContent=j.xato||'Kirishda xatolik yuz berdi.';return}
+    MEN=j.foydalanuvchi||null;
+    $('loginPass').value='';
+    if(!MEN){$('gateErr').textContent='Kirishda xatolik yuz berdi.';return}
+    if(MEN.rol!=='admin'){ruxsatYoq(MEN);return}
+    await panelniOch();
+  }catch(e){
+    $('gateErr').textContent='Serverga ulanib bo‘lmadi.';
+  }finally{b.disabled=false;b.textContent='Kirish'}
+}
+
+/* ---- chiqish ---- */
+async function chiq(){
+  try{await fetch('/api/chiqish',{method:'POST',credentials:'same-origin'})}catch(e){}
+  location.reload();
+}
+
+$('loginBtn').onclick=kir;
+$('loginUser').onkeydown=e=>{if(e.key==='Enter')$('loginPass').focus()};
+$('loginPass').onkeydown=e=>{if(e.key==='Enter')kir()};
+$('denyOut').onclick=chiq;
+$('out').onclick=chiq;
+
+$('refresh').onclick=async()=>{
+  const b=$('refresh');b.textContent='...';
+  try{await load();render();b.textContent='Yangilandi ✓'}
+  catch(e){
+    if(e.kod===401){gateKorsat('Seans tugadi — qaytadan kiring.');return}
+    if(e.kod===403){ruxsatYoq(MEN);return}
+    b.textContent='Xato';
+  }
+  setTimeout(()=>b.textContent='Yangilash',1500);
+};
+$('csv').onclick=csv;
+$('q').oninput=e=>{Q=e.target.value.trim();render()};
+document.querySelectorAll('.chipf').forEach(el=>el.onclick=()=>{
+  const f=el.dataset.f;FILT.has(f)?FILT.delete(f):FILT.add(f);
+  el.classList.toggle('on',FILT.has(f));render()});
+
+boshla();
+</script>
+</body>
+</html>

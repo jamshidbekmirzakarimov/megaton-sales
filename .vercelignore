@@ -1,0 +1,15 @@
+# Vercel loyiha ILDIZIDAGI fayllarni statik tarzda tarqatadi.
+# Ya'ni bu yerga tushgan har qanday fayl https://sayt/<nomi> orqali
+# yuklab olinishi mumkin. Quyidagilar productionda kerak emas —
+# tarqatilmasin (ayniqsa sxema fayli va lokal skriptlar).
+
+dev.mjs
+admin-parol.mjs
+supabase_tables.sql
+README.md
+package-lock.json
+
+.env
+.env.local
+.git
+node_modules
